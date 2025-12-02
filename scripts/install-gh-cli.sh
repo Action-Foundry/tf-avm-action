@@ -2,28 +2,15 @@
 # install-gh-cli.sh - Install GitHub CLI with version support
 # Supports "latest" and specific version numbers
 
-set -euo pipefail
+# Determine the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source common library
+# shellcheck source=lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
 
 VERSION="${1:-latest}"
 ARCH="${2:-amd64}"
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
-}
 
 # Resolve "latest" to actual version
 resolve_version() {
@@ -41,10 +28,10 @@ resolve_version() {
         fi
         
         # Remove 'v' prefix
-        echo "${latest#v}"
+        normalize_version "$latest"
     else
         # Remove 'v' prefix if present
-        echo "${version#v}"
+        normalize_version "$version"
     fi
 }
 
@@ -65,18 +52,16 @@ install_gh_cli() {
     local arch="$2"
     local download_url="https://github.com/cli/cli/releases/download/v${version}/gh_${version}_linux_${arch}.tar.gz"
     local temp_dir
-    temp_dir=$(mktemp -d)
+    temp_dir=$(create_temp_dir)
     
     log_info "Downloading GitHub CLI v${version} for linux/${arch}..."
     
-    cd "$temp_dir"
+    cd "$temp_dir" || exit 1
     
     # Download the tarball
-    if ! curl -sSfL --max-time 300 -o "gh.tar.gz" "$download_url"; then
-        log_error "Failed to download GitHub CLI from: $download_url"
+    if ! download_file "$download_url" "gh.tar.gz" 300; then
         log_error "Version ${version} may not exist. Check available versions at:"
         log_error "https://github.com/cli/cli/releases"
-        rm -rf "$temp_dir"
         exit 1
     fi
     
@@ -85,9 +70,8 @@ install_gh_cli() {
     mv "gh_${version}_linux_${arch}/bin/gh" /usr/local/bin/
     chmod +x /usr/local/bin/gh
     
-    # Cleanup
+    # Cleanup is handled by trap set in create_temp_dir
     cd /
-    rm -rf "$temp_dir"
     
     log_info "GitHub CLI v${version} installed successfully"
 }
