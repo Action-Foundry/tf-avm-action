@@ -1,0 +1,67 @@
+name: Deploy Extended AVM Modules
+
+# This example demonstrates deploying multiple AVM modules beyond the basic three
+# Shows usage of Key Vault, SQL Server, AKS, Event Hub, Container Registry, and Application Insights
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-extended-modules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Deploy Extended AVM Modules
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          # Enable AVM mode
+          enable_avm_mode: 'true'
+          
+          # Environment to deploy
+          avm_environments: 'dev-extended'
+          
+          # Deploy multiple resource types including new modules
+          # All 102 AVM modules are supported!
+          avm_resource_types: >-
+            resource_groups,
+            keyvault_vault,
+            sql_server,
+            containerservice_managedcluster,
+            eventhub_namespace,
+            containerregistry_registry,
+            insights_component
+          
+          # Default location
+          avm_location: 'eastus'
+          
+          # Terraform working directory
+          terraform_working_dir: './examples/terraform-configs'
+          
+          # Azure authentication (OIDC)
+          azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azure_use_oidc: 'true'
