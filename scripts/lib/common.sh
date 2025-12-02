@@ -70,15 +70,12 @@ detect_arch() {
     esac
 }
 
-# Create a temporary directory that is automatically cleaned up on exit
+# Create a temporary directory
 # Returns: Path to the temporary directory
+# Note: Caller is responsible for cleanup
 create_temp_dir() {
     local temp_dir
     temp_dir=$(mktemp -d)
-    
-    # Set up trap to clean up on exit (both normal and error)
-    # shellcheck disable=SC2064
-    trap "rm -rf '$temp_dir'" EXIT
     
     echo "$temp_dir"
 }

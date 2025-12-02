@@ -55,6 +55,10 @@ install_terraform() {
     local temp_dir
     temp_dir=$(create_temp_dir)
     
+    # Set up cleanup trap for the temporary directory
+    # shellcheck disable=SC2064
+    trap "rm -rf '$temp_dir'" EXIT
+    
     log_info "Downloading Terraform v${version} for linux/${arch}..."
     
     cd "$temp_dir" || exit 1
@@ -81,7 +85,7 @@ install_terraform() {
     mv terraform /usr/local/bin/
     chmod +x /usr/local/bin/terraform
     
-    # Cleanup is handled by trap set in create_temp_dir
+    # Cleanup is handled by trap set above
     cd /
     
     log_info "Terraform v${version} installed successfully"

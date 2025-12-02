@@ -90,9 +90,20 @@ temp_dir=$(create_temp_dir 2>&1)
 if [[ -n "$temp_dir" ]] && echo "$temp_dir" | grep -q "/tmp"; then
     echo "✓ PASS: create_temp_dir returns a temp path"
     TESTS_PASSED=$((TESTS_PASSED + 1))
-    # Directory gets cleaned up by trap in the subshell
 else
     echo "✗ FAIL: create_temp_dir did not return a valid temp path"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+fi
+TESTS_RUN=$((TESTS_RUN + 1))
+
+# Test that temp directory persists after create_temp_dir returns (regression test for trap issue)
+if [[ -d "$temp_dir" ]]; then
+    echo "✓ PASS: temp directory persists after create_temp_dir returns"
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+    # Clean up manually since caller is now responsible
+    rm -rf "$temp_dir"
+else
+    echo "✗ FAIL: temp directory was deleted prematurely"
     TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 TESTS_RUN=$((TESTS_RUN + 1))
