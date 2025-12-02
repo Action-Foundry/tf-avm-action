@@ -51,6 +51,7 @@ install_gh_cli() {
     local version="$1"
     local arch="$2"
     local download_url="https://github.com/cli/cli/releases/download/v${version}/gh_${version}_linux_${arch}.tar.gz"
+    local checksum_url="https://github.com/cli/cli/releases/download/v${version}/gh_${version}_checksums.txt"
     local temp_dir
     temp_dir=$(create_temp_dir)
     
@@ -63,6 +64,20 @@ install_gh_cli() {
         log_error "Version ${version} may not exist. Check available versions at:"
         log_error "https://github.com/cli/cli/releases"
         exit 1
+    fi
+    
+    # Download and verify checksums if available
+    if curl -sSfL --max-time 30 -o "checksums.txt" "$checksum_url" 2>/dev/null; then
+        log_info "Verifying checksum..."
+        local expected_checksum
+        expected_checksum=$(grep "gh_${version}_linux_${arch}.tar.gz" checksums.txt | awk '{print $1}')
+        if [[ -n "$expected_checksum" ]]; then
+            verify_checksum "gh.tar.gz" "$expected_checksum"
+        else
+            log_warn "Could not find checksum for this file, skipping verification"
+        fi
+    else
+        log_warn "Could not download checksums file, skipping verification"
     fi
     
     log_info "Installing GitHub CLI..."

@@ -1,0 +1,92 @@
+# Azure Deployment Example
+# Complete workflow for deploying infrastructure to Azure with Terraform
+
+name: Azure Infrastructure Deployment
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  # Azure Service Principal credentials
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  
+  # Terraform configuration
+  TF_WORKING_DIR: './terraform'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # For PR comments
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform + Azure CLI
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          terraform_version: '1.9.3'
+          azure_cli_version: '2.64.0'
+
+      - name: Azure Login
+        run: |
+          az login --service-principal \
+            -u $ARM_CLIENT_ID \
+            -p $ARM_CLIENT_SECRET \
+            --tenant $ARM_TENANT_ID
+          az account show
+
+      - name: Terraform Format Check
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform init \
+            -backend-config="storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ secrets.TF_STATE_CONTAINER }}" \
+            -backend-config="key=terraform.tfstate"
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform plan -out=tfplan -input=false
+          terraform show -no-color tfplan > plan.txt
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: ${{ env.TF_WORKING_DIR }}/tfplan
+          retention-days: 5
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Output
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform output -json > outputs.json
+
+      - name: Upload Outputs Artifact
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-outputs
+          path: ${{ env.TF_WORKING_DIR }}/outputs.json
+          retention-days: 30

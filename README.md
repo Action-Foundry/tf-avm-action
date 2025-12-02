@@ -35,6 +35,8 @@
 
 ## 📖 Usage
 
+> **💡 More Examples**: Check out the [examples/](examples/) directory for comprehensive real-world scenarios including OIDC authentication, multi-environment deployments, and drift detection.
+
 ### Basic Usage (Latest Versions)
 
 ```yaml
@@ -151,11 +153,11 @@ jobs:
 
 - **Terraform**: Downloads are verified using SHA256 checksums from HashiCorp's official release metadata
 - **Azure CLI**: Installed via pip from PyPI with package integrity verification
-- **GitHub CLI**: Downloaded from official GitHub releases
+- **GitHub CLI**: Downloads are verified using SHA256 checksums from official GitHub releases
 
 ### Image Security
 
-- Built on **Alpine Linux 3.21** - minimal base image with security updates
+- Built on **Alpine Linux 3.21.0** - minimal base image with security updates
 - **Non-essential packages removed** - only required dependencies installed
 - **No cached credentials** - clean image without stored secrets
 - **Regular updates** - base image updated with security patches

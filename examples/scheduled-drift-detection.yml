@@ -1,0 +1,143 @@
+# Scheduled Drift Detection
+# Detect configuration drift in infrastructure by running Terraform plan on a schedule
+
+name: Infrastructure Drift Detection
+
+on:
+  schedule:
+    # Run every day at 8 AM UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write # To create issues when drift is detected
+
+env:
+  ARM_USE_OIDC: true
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+jobs:
+  drift-detection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main # Always check against main branch
+
+      - name: Setup Terraform + Azure CLI + GitHub CLI
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          terraform_version: '1.9.3'
+          azure_cli_version: '2.64.0'
+          gh_cli_version: '2.63.1'
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform Plan for Drift
+        id: plan
+        working-directory: ./terraform
+        run: |
+          terraform plan -detailed-exitcode -no-color | tee plan.txt
+          echo "exitcode=$?" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Check for Drift
+        id: drift
+        run: |
+          # Exit code 2 means there are changes (drift detected)
+          # Exit code 0 means no changes
+          # Exit code 1 means error
+          if [ "${{ steps.plan.outputs.exitcode }}" = "2" ]; then
+            echo "drift_detected=true" >> $GITHUB_OUTPUT
+            echo "::warning::Infrastructure drift detected!"
+          elif [ "${{ steps.plan.outputs.exitcode }}" = "0" ]; then
+            echo "drift_detected=false" >> $GITHUB_OUTPUT
+            echo "::notice::No infrastructure drift detected"
+          else
+            echo "drift_detected=error" >> $GITHUB_OUTPUT
+            echo "::error::Error running Terraform plan"
+            exit 1
+          fi
+
+      - name: Create Issue if Drift Detected
+        if: steps.drift.outputs.drift_detected == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PLAN=$(cat terraform/plan.txt)
+          
+          # Check if there's already an open drift detection issue
+          EXISTING_ISSUE=$(gh issue list --label "drift-detection" --state open --json number --jq '.[0].number')
+          
+          if [ -z "$EXISTING_ISSUE" ]; then
+            # Create new issue
+            gh issue create \
+              --title "Infrastructure Drift Detected - $(date +%Y-%m-%d)" \
+              --label "drift-detection,infrastructure" \
+              --body "## Infrastructure Drift Detected
+          
+          Automated drift detection found differences between the Terraform configuration and actual infrastructure state.
+          
+          **Detection Date:** $(date --iso-8601=seconds)
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+          ### Plan Output
+          
+          <details>
+          <summary>Show Terraform Plan</summary>
+          
+          \`\`\`terraform
+          ${PLAN}
+          \`\`\`
+          
+          </details>
+          
+          ### Action Required
+          
+          Please review the changes and either:
+          1. Update the infrastructure to match the configuration
+          2. Update the configuration to match the infrastructure
+          3. Apply the Terraform changes if they are expected
+          
+          ### Additional Resources
+          
+          - [Terraform State](terraform/terraform.tfstate)
+          - [Configuration Files](terraform/)
+          "
+          else
+            # Update existing issue
+            gh issue comment "$EXISTING_ISSUE" \
+              --body "## New Drift Detection - $(date +%Y-%m-%d)
+          
+          Another drift detection run found continued differences.
+          
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          "
+          fi
+
+      - name: Upload Plan Artifact
+        if: steps.drift.outputs.drift_detected == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-plan-${{ github.run_id }}
+          path: terraform/plan.txt
+          retention-days: 30
+
+      - name: Notify on Success
+        if: steps.drift.outputs.drift_detected == 'false'
+        run: |
+          echo "✅ No infrastructure drift detected. Everything is in sync!"
