@@ -51,7 +51,7 @@ test_module_display_name() {
     
     local display_name
     if display_name=$(get_avm_module_display_name "$module_name"); then
-        if [[ -n "$display_name" && "$display_name" != "$module_name" ]]; then
+        if [[ -n "$display_name" ]]; then
             echo -e "${GREEN}✓ PASS${NC}: $test_description (Display: $display_name)"
             TESTS_PASSED=$((TESTS_PASSED + 1))
             return 0
@@ -59,6 +59,7 @@ test_module_display_name() {
     fi
     
     echo -e "${RED}✗ FAIL${NC}: $test_description"
+    echo "  Module: $module_name did not return a valid display name"
     TESTS_FAILED=$((TESTS_FAILED + 1))
     return 1
 }

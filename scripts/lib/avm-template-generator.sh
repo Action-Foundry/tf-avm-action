@@ -52,6 +52,8 @@ variable "${var_name}" {
     tags                = optional(map(string), {})
     # Additional properties can be specified based on the module's input variables
     # Users should refer to the module documentation for available options
+    # Note: This generic template uses common AVM module parameters (name, location, resource_group_name)
+    # For modules with different parameter requirements, use custom templates in avm-deploy.sh
   }))
   default = {}
 }
@@ -71,12 +73,17 @@ module "${var_name}" {
   version  = "~> 0.1"
   for_each = var.${var_name}
 
+  # Core parameters - most AVM modules follow this pattern
   name     = each.value.name
-  location = coalesce(each.value.location, var.default_location)
+  location = try(each.value.location, var.default_location)
   
   # Conditionally set resource_group_name if provided
   # Most resources need this, some (like resource groups) don't
 ${rg_line}
+
+  # Note: This generic template provides a baseline configuration
+  # Module-specific parameters should be added to the tfvars file
+  # and passed through the module block. Refer to the AVM module documentation.
 
   tags = merge(
     {
@@ -98,7 +105,7 @@ output "${var_name}_ids" {
 output "${var_name}_names" {
   description = "Map of ${display_name} resource names"
   value = {
-    for k, resource in module.${var_name} : k => resource.name
+    for k, resource in module.${var_name} : k => try(resource.name, resource.resource_name, k)
   }
 }
 EOF
