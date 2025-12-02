@@ -140,11 +140,12 @@ fi
 TESTS_RUN=$((TESTS_RUN + 1))
 
 # Invalid versions (should fail)
-if ! validate_version_pattern "[INFO] Resolving latest version..."; then
-    echo "✓ PASS: Version pattern rejects log message"
+# Test with a log-like message that could contaminate version output
+if ! validate_version_pattern "Resolving latest version..."; then
+    echo "✓ PASS: Version pattern rejects non-version text"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else
-    echo "✗ FAIL: Version pattern accepts log message"
+    echo "✗ FAIL: Version pattern accepts non-version text"
     TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 TESTS_RUN=$((TESTS_RUN + 1))
