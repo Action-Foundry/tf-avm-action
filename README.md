@@ -16,6 +16,7 @@
 - **Secure**: Checksum verification for downloads, minimal attack surface
 - **Enterprise-Ready**: Production-tested with comprehensive error handling
 - **Multi-Architecture**: Supports `amd64` and `arm64`
+- **🆕 AVM Support**: Integrated Azure Verified Modules for CAF-compliant deployments
 
 ## 📋 Inputs
 
@@ -60,6 +61,17 @@
 |-------|-------------|---------|----------|
 | `gh_token` | GitHub token (defaults to `GITHUB_TOKEN` if not provided) | | No |
 
+### Azure Verified Modules (AVM) Support (🆕 NEW)
+
+| Input | Description | Default | Required |
+|-------|-------------|---------|----------|
+| `enable_avm_mode` | Enable AVM modules mode for Azure resource deployment | `false` | No |
+| `avm_environments` | Comma-separated list of environments to deploy (e.g., `dev`, `dev,test,prod`) | | No |
+| `avm_resource_types` | Comma-separated list of resource types (e.g., `resource_groups,vnets,storage_accounts`) | `resource_groups,vnets,storage_accounts` | No |
+| `avm_location` | Default Azure location for resources (e.g., `eastus`) | `eastus` | No |
+
+> **📚 Learn More**: See [AVM_MODULES.md](AVM_MODULES.md) for comprehensive documentation on using Azure Verified Modules.
+
 ## 📤 Outputs
 
 | Output | Description |
@@ -69,14 +81,63 @@
 | `gh_cli_version_resolved` | The actual GitHub CLI version that was installed |
 | `terraform_plan_exitcode` | Exit code from Terraform plan (0=no changes, 1=error, 2=changes) |
 | `drift_detected` | Whether drift was detected (`true`/`false`) |
+| `avm_environments_deployed` | Comma-separated list of successfully deployed environments (AVM mode) |
 
 ## 📖 Usage
 
-> **💡 More Examples**: Check out the [examples/](examples/) directory for comprehensive real-world scenarios including the new simplified workflows, drift detection, and authentication options.
+> **💡 More Examples**: Check out the [examples/](examples/) directory for comprehensive real-world scenarios including the new simplified workflows, drift detection, authentication options, and AVM deployments.
 
-### 🚀 Quick Start: Simplified Terraform Workflow (⭐ NEW)
+### 🆕 Quick Start: Azure Verified Modules (AVM) - NEW!
 
-The easiest way to deploy infrastructure with this action:
+The easiest way to deploy Azure resources following CAF best practices:
+
+```yaml
+name: Deploy with AVM
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Deploy with AVM
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          enable_avm_mode: 'true'
+          avm_environments: 'dev'  # or 'dev,test,prod' for multiple
+          avm_resource_types: 'resource_groups,vnets,storage_accounts'
+          terraform_working_dir: './terraform'
+          azure_use_oidc: 'true'
+```
+
+**Directory Structure for AVM**:
+```
+terraform/
+  └── dev/
+      ├── resource_groups.tfvars
+      ├── vnets.tfvars
+      └── storage_accounts.tfvars
+```
+
+> **📚 Complete Guide**: See [AVM_MODULES.md](AVM_MODULES.md) for full documentation, examples, and tfvars templates.
+
+### 🚀 Quick Start: Simplified Terraform Workflow
+
+Deploy infrastructure with standard Terraform:
 
 ```yaml
 name: Infrastructure Deployment

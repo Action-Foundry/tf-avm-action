@@ -34,6 +34,17 @@ else
 fi
 
 echo ""
+
+# Run AVM deployment tests
+echo "Running AVM deployment tests..."
+if bash "${SCRIPT_DIR}/test-avm-deploy.sh"; then
+    echo "✓ AVM deployment tests passed"
+else
+    echo "✗ AVM deployment tests failed"
+    OVERALL_STATUS=1
+fi
+
+echo ""
 echo "========================================="
 echo "All Tests Complete"
 echo "========================================="
