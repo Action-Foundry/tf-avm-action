@@ -56,6 +56,10 @@ install_gh_cli() {
     local temp_dir
     temp_dir=$(create_temp_dir)
     
+    # Set up cleanup trap for the temporary directory
+    # shellcheck disable=SC2064
+    trap "rm -rf '$temp_dir'" EXIT
+    
     log_info "Downloading GitHub CLI v${version} for linux/${arch}..."
     
     cd "$temp_dir" || exit 1
@@ -87,7 +91,7 @@ install_gh_cli() {
     mv "gh_${version}_linux_${arch}/bin/gh" /usr/local/bin/
     chmod +x /usr/local/bin/gh
     
-    # Cleanup is handled by trap set in create_temp_dir
+    # Cleanup is handled by trap set above
     cd /
     
     log_info "GitHub CLI v${version} installed successfully"
