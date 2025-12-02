@@ -173,7 +173,17 @@ fi
 if [[ "$TERRAFORM_COMMAND" != "none" ]]; then
     # Convert relative path to absolute path
     if [[ "$TERRAFORM_WORKING_DIR" != /* ]]; then
-        TERRAFORM_WORKING_DIR="${GITHUB_WORKSPACE:-/github/workspace}/${TERRAFORM_WORKING_DIR}"
+        if [[ -z "${GITHUB_WORKSPACE:-}" ]]; then
+            log_error "GITHUB_WORKSPACE environment variable is not set"
+            exit 1
+        fi
+        TERRAFORM_WORKING_DIR="${GITHUB_WORKSPACE}/${TERRAFORM_WORKING_DIR}"
+    fi
+    
+    # Validate the resolved path exists
+    if [[ ! -d "$TERRAFORM_WORKING_DIR" ]]; then
+        log_error "Terraform working directory does not exist: $TERRAFORM_WORKING_DIR"
+        exit 1
     fi
     
     /scripts/run-terraform-workflow.sh \

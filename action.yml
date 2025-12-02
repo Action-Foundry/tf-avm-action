@@ -77,7 +77,7 @@ inputs:
     required: false
     default: ''
   azure_use_oidc:
-    description: 'Use OIDC for Azure authentication (requires azure/login action to be run first)'
+    description: 'Use OIDC for Azure authentication (sets ARM_USE_OIDC=true for Terraform). For Azure CLI operations, run azure/login action first.'
     required: false
     default: 'false'
 

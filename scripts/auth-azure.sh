@@ -24,7 +24,7 @@ if [[ -z "$AZURE_CLIENT_ID" ]] && [[ -z "$AZURE_SUBSCRIPTION_ID" ]] && [[ -z "$A
     exit 0
 fi
 
-# Validate required parameters
+# Validate required parameters based on auth method
 if [[ -z "$AZURE_CLIENT_ID" ]]; then
     log_error "AZURE_CLIENT_ID is required for Azure authentication"
     exit 1
@@ -32,6 +32,12 @@ fi
 
 if [[ -z "$AZURE_TENANT_ID" ]]; then
     log_error "AZURE_TENANT_ID is required for Azure authentication"
+    exit 1
+fi
+
+if [[ "$AZURE_USE_OIDC" != "true" ]] && [[ -z "$AZURE_CLIENT_SECRET" ]]; then
+    log_error "AZURE_CLIENT_SECRET is required for Service Principal authentication"
+    log_error "Either provide azure_client_secret or set azure_use_oidc=true"
     exit 1
 fi
 
@@ -70,12 +76,6 @@ if [[ "$AZURE_USE_OIDC" == "true" ]]; then
     
 else
     log_info "Using Service Principal authentication for Azure"
-    
-    if [[ -z "$AZURE_CLIENT_SECRET" ]]; then
-        log_error "AZURE_CLIENT_SECRET is required for Service Principal authentication"
-        log_error "Either provide azure_client_secret or set azure_use_oidc=true"
-        exit 1
-    fi
     
     export ARM_CLIENT_SECRET="$AZURE_CLIENT_SECRET"
     

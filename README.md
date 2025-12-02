@@ -139,6 +139,9 @@ Automatically detect infrastructure drift and create GitHub issues:
     enable_drift_detection: 'true'
     drift_create_issue: 'true'
     gh_token: ${{ secrets.GITHUB_TOKEN }}
+    azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+    azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+    azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
     azure_use_oidc: 'true'
 ```
 

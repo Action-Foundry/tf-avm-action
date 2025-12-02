@@ -42,6 +42,9 @@ Use the new `terraform_command` input for the easiest experience:
   with:
     terraform_command: 'full'  # init + plan + apply
     terraform_working_dir: './terraform'
+    azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+    azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+    azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
     azure_use_oidc: 'true'
 ```
 
@@ -60,6 +63,10 @@ Use the new `terraform_command` input for the easiest experience:
     terraform_command: 'plan'
     enable_drift_detection: 'true'
     drift_create_issue: 'true'
+    azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+    azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+    azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    azure_use_oidc: 'true'
 ```
 
 ## Usage

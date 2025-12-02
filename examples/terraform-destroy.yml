@@ -22,11 +22,11 @@ env:
 jobs:
   destroy:
     runs-on: ubuntu-latest
-    # Safety check: only run if user typed DESTROY
-    # Note: For production, consider adding additional safeguards:
-    # - Required approvals from specific users
-    # - Branch protection rules
-    # - Environment protection rules
+    # Safety check: This workflow only runs if the user types "DESTROY" (see 'if' condition below).
+    # Recommendation: For production, configure additional safeguards in GitHub repository settings, such as:
+    #   - Required approvals from specific users
+    #   - Branch protection rules
+    #   - Environment protection rules
     if: github.event.inputs.confirm_destroy == 'DESTROY'
     
     steps:

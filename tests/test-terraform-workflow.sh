@@ -162,9 +162,8 @@ if bash "${SCRIPT_DIR}/../scripts/auth-github.sh" "$GH_TOKEN" &>/dev/null; then
     echo "✓ PASS: GitHub auth handles no credentials gracefully"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else
-    # This is OK, it might warn but shouldn't fail hard
-    echo "✓ PASS: GitHub auth completed (warnings OK)"
-    TESTS_PASSED=$((TESTS_PASSED + 1))
+    echo "✗ FAIL: GitHub auth should handle missing credentials gracefully (exit 0)"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 TESTS_RUN=$((TESTS_RUN + 1))
 

@@ -22,6 +22,16 @@ create_drift_issue() {
     local plan_output
     plan_output=$(cat plan-output.txt 2>/dev/null || echo "Plan output not available")
     
+    # Limit plan output size to prevent GitHub API issues (max 65536 chars for issue body)
+    # This also helps reduce exposure of potentially sensitive data
+    local max_plan_length=50000
+    if [[ ${#plan_output} -gt $max_plan_length ]]; then
+        plan_output="${plan_output:0:$max_plan_length}
+
+... (plan output truncated to prevent exposure of sensitive data)
+See full plan in workflow logs: ${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-unknown}/actions/runs/${GITHUB_RUN_ID:-unknown}"
+    fi
+    
     # Check if there's already an open drift detection issue
     local existing_issue
     existing_issue=$(gh issue list --label "drift-detection" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
@@ -31,14 +41,19 @@ create_drift_issue() {
 
 Automated drift detection found differences between the Terraform configuration and actual infrastructure state.
 
-**Detection Date:** $(date --iso-8601=seconds)
+**Detection Date:** $(date -u +"%Y-%m-%dT%H:%M:%S%z")
 **Workflow Run:** ${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-unknown}/actions/runs/${GITHUB_RUN_ID:-unknown}
 **Working Directory:** $TERRAFORM_WORKING_DIR
+
+### ⚠️ Security Notice
+
+The Terraform plan output below may contain sensitive information. Ensure proper repository access controls are in place.
+Consider using Terraform's \`-no-color\` and \`sensitive\` variable markings to protect secrets.
 
 ### Plan Output
 
 <details>
-<summary>Show Terraform Plan</summary>
+<summary>Show Terraform Plan (Click to expand)</summary>
 
 \`\`\`terraform
 $plan_output
@@ -153,25 +168,33 @@ if [[ "$ENABLE_DRIFT_DETECTION" == "true" ]]; then
     # Use -detailed-exitcode to detect changes
     # Exit code 0 = no changes, 1 = error, 2 = changes detected
     
+    # Temporarily disable exit on error for detailed-exitcode handling
+    set +e
+    # Note: VAR_FILE_ARGS and TERRAFORM_EXTRA_ARGS must NOT be quoted to allow proper word splitting
     # shellcheck disable=SC2086
-    if terraform plan -detailed-exitcode -input=false $VAR_FILE_ARGS $TERRAFORM_EXTRA_ARGS | tee plan-output.txt; then
-        PLAN_EXITCODE=0
+    terraform plan -detailed-exitcode -input=false ${VAR_FILE_ARGS} ${TERRAFORM_EXTRA_ARGS} | tee plan-output.txt
+    PLAN_EXITCODE=${PIPESTATUS[0]}
+    set -e  # Re-enable exit on error
+    
+    if [[ $PLAN_EXITCODE -eq 0 ]]; then
         log_info "No changes detected - infrastructure matches configuration"
-    else
-        PLAN_EXITCODE=$?
-        if [[ $PLAN_EXITCODE -eq 2 ]]; then
-            DRIFT_DETECTED="true"
-            log_warn "Changes detected - infrastructure drift found!"
-            
-            # Create GitHub issue if requested
-            if [[ "$DRIFT_CREATE_ISSUE" == "true" ]] && [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    elif [[ $PLAN_EXITCODE -eq 2 ]]; then
+        DRIFT_DETECTED="true"
+        log_warn "Changes detected - infrastructure drift found!"
+        
+        # Create GitHub issue if requested
+        if [[ "$DRIFT_CREATE_ISSUE" == "true" ]]; then
+            if gh auth status &>/dev/null; then
                 log_info "Creating GitHub issue for drift detection..."
                 create_drift_issue
+            else
+                log_warn "Cannot create drift issue: GitHub CLI is not authenticated"
+                log_warn "Provide gh_token input or ensure GITHUB_TOKEN is available"
             fi
-        else
-            log_error "Terraform plan failed with exit code: $PLAN_EXITCODE"
-            exit 1
         fi
+    else
+        log_error "Terraform plan failed with exit code: $PLAN_EXITCODE"
+        exit 1
     fi
     
     # Set outputs
