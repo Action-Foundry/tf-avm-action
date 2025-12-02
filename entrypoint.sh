@@ -34,6 +34,12 @@ AZURE_SUBSCRIPTION_ID="${INPUT_AZURE_SUBSCRIPTION_ID:-}"
 AZURE_TENANT_ID="${INPUT_AZURE_TENANT_ID:-}"
 AZURE_USE_OIDC="${INPUT_AZURE_USE_OIDC:-false}"
 
+# AVM (Azure Verified Modules) support
+ENABLE_AVM_MODE="${INPUT_ENABLE_AVM_MODE:-false}"
+AVM_ENVIRONMENTS="${INPUT_AVM_ENVIRONMENTS:-}"
+AVM_RESOURCE_TYPES="${INPUT_AVM_RESOURCE_TYPES:-resource_groups,vnets,storage_accounts}"
+AVM_LOCATION="${INPUT_AVM_LOCATION:-eastus}"
+
 # Validate inputs (basic sanity checks)
 validate_input() {
     local input="$1"
@@ -169,23 +175,34 @@ if [[ -n "$AZURE_CLIENT_ID" ]] || [[ -n "$AZURE_TENANT_ID" ]]; then
     echo ""
 fi
 
-# Run Terraform Workflow
-if [[ "$TERRAFORM_COMMAND" != "none" ]]; then
-    # Convert relative path to absolute path
-    if [[ "$TERRAFORM_WORKING_DIR" != /* ]]; then
-        if [[ -z "${GITHUB_WORKSPACE:-}" ]]; then
-            log_error "GITHUB_WORKSPACE environment variable is not set"
-            exit 1
-        fi
-        TERRAFORM_WORKING_DIR="${GITHUB_WORKSPACE}/${TERRAFORM_WORKING_DIR}"
-    fi
-    
-    # Validate the resolved path exists
-    if [[ ! -d "$TERRAFORM_WORKING_DIR" ]]; then
-        log_error "Terraform working directory does not exist: $TERRAFORM_WORKING_DIR"
+# Convert relative path to absolute path for working directory
+if [[ "$TERRAFORM_WORKING_DIR" != /* ]]; then
+    if [[ -z "${GITHUB_WORKSPACE:-}" ]]; then
+        log_error "GITHUB_WORKSPACE environment variable is not set"
         exit 1
     fi
-    
+    TERRAFORM_WORKING_DIR="${GITHUB_WORKSPACE}/${TERRAFORM_WORKING_DIR}"
+fi
+
+# Validate the resolved path exists
+if [[ ! -d "$TERRAFORM_WORKING_DIR" ]]; then
+    log_error "Terraform working directory does not exist: $TERRAFORM_WORKING_DIR"
+    exit 1
+fi
+
+# Run AVM Deployment (takes priority over standard Terraform workflow)
+if [[ "$ENABLE_AVM_MODE" == "true" ]]; then
+    /scripts/avm-deploy.sh \
+        "$ENABLE_AVM_MODE" \
+        "$AVM_ENVIRONMENTS" \
+        "$AVM_RESOURCE_TYPES" \
+        "$AVM_LOCATION" \
+        "$TERRAFORM_WORKING_DIR" \
+        "$TERRAFORM_BACKEND_CONFIG" \
+        "$TERRAFORM_EXTRA_ARGS"
+    echo ""
+# Run Standard Terraform Workflow
+elif [[ "$TERRAFORM_COMMAND" != "none" ]]; then
     /scripts/run-terraform-workflow.sh \
         "$TERRAFORM_COMMAND" \
         "$TERRAFORM_WORKING_DIR" \

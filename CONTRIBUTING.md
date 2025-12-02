@@ -81,11 +81,25 @@ tf-avm-action/
 │   │   └── common.sh   # Shared utility functions
 │   ├── install-terraform.sh
 │   ├── install-azure-cli.sh
-│   └── install-gh-cli.sh
+│   ├── install-gh-cli.sh
+│   ├── run-terraform-workflow.sh
+│   ├── avm-deploy.sh   # AVM deployment orchestration
+│   ├── auth-azure.sh
+│   └── auth-github.sh
+├── tests/              # Unit tests
+│   ├── run-all-tests.sh
+│   ├── test-common.sh
+│   ├── test-terraform-workflow.sh
+│   └── test-avm-deploy.sh
+├── examples/           # Example workflows and configs
+│   ├── avm-*.yml      # AVM deployment examples
+│   └── terraform-configs/  # Example tfvars files
 ├── action.yml          # GitHub Action definition
 ├── Dockerfile          # Container image
 ├── entrypoint.sh       # Main entrypoint script
 ├── README.md           # User documentation
+├── AVM_MODULES.md      # AVM usage guide
+├── ONBOARDING.md       # Contributor onboarding
 ├── CONTRIBUTING.md     # This file
 ├── SECURITY.md         # Security policy
 └── LICENSE             # MIT License
@@ -198,6 +212,8 @@ Releases are managed by maintainers:
 - Open a [Discussion](https://github.com/Action-Foundry/tf-avm-action/discussions) for questions
 - Check existing [Issues](https://github.com/Action-Foundry/tf-avm-action/issues) for known problems
 - Review the [README](README.md) for usage examples
+- Check [AVM_MODULES.md](AVM_MODULES.md) for AVM-specific guidance
+- Read [ONBOARDING.md](ONBOARDING.md) for detailed contributor guidance
 
 ## Recognition
 

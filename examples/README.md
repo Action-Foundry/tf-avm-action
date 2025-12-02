@@ -2,13 +2,24 @@
 
 This directory contains real-world examples of using tf-avm-action in various scenarios.
 
-## 🚀 New Simplified Terraform Workflows
+## 🆕 Azure Verified Modules (AVM) - NEW!
 
-The action now includes built-in Terraform workflow commands for easier usage:
+Deploy Azure resources following CAF best practices with pre-validated modules:
 
-- [terraform-full-workflow.yml](terraform-full-workflow.yml) - ⭐ **NEW**: Simple `full` command (init + plan + apply)
-- [terraform-plan-only.yml](terraform-plan-only.yml) - ⭐ **NEW**: `plan` command for PR reviews (init + plan)
-- [terraform-destroy.yml](terraform-destroy.yml) - ⭐ **NEW**: `destroy` command to tear down infrastructure
+- [avm-single-environment.yml](avm-single-environment.yml) - 🆕 **NEW**: Deploy to a single environment (dev)
+- [avm-multi-environment.yml](avm-multi-environment.yml) - 🆕 **NEW**: Deploy to multiple environments sequentially
+- [avm-matrix-deployment.yml](avm-matrix-deployment.yml) - 🆕 **NEW**: Deploy to multiple environments in parallel
+- [terraform-configs/](terraform-configs/) - 🆕 **NEW**: Example tfvars files for dev and prod
+
+> **📚 Complete Guide**: See [AVM_MODULES.md](../AVM_MODULES.md) for comprehensive documentation.
+
+## 🚀 Simplified Terraform Workflows
+
+The action includes built-in Terraform workflow commands for easier usage:
+
+- [terraform-full-workflow.yml](terraform-full-workflow.yml) - ⭐ Simple `full` command (init + plan + apply)
+- [terraform-plan-only.yml](terraform-plan-only.yml) - ⭐ `plan` command for PR reviews (init + plan)
+- [terraform-destroy.yml](terraform-destroy.yml) - ⭐ `destroy` command to tear down infrastructure
 
 ## 🔍 Enhanced Drift Detection
 

@@ -1,0 +1,98 @@
+# AVM Matrix Deployment
+# Deploy to multiple environments in parallel using matrix strategy
+
+name: AVM Matrix Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ matrix.environment }}  # Uses GitHub environment protection
+    
+    strategy:
+      # Don't cancel other environments if one fails
+      fail-fast: false
+      matrix:
+        environment: [dev, test, prod]
+        include:
+          - environment: dev
+            location: eastus
+            resource_types: resource_groups,vnets,storage_accounts
+          - environment: test
+            location: eastus
+            resource_types: resource_groups,vnets
+          - environment: prod
+            location: westeurope
+            resource_types: resource_groups,vnets,storage_accounts
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy ${{ matrix.environment }} with AVM
+        id: deploy
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          # Enable AVM mode
+          enable_avm_mode: 'true'
+          
+          # Deploy to specific environment
+          avm_environments: ${{ matrix.environment }}
+          
+          # Environment-specific resource types
+          avm_resource_types: ${{ matrix.resource_types }}
+          
+          # Environment-specific location
+          avm_location: ${{ matrix.location }}
+          
+          # Terraform working directory
+          terraform_working_dir: './terraform'
+          
+          # Azure authentication (OIDC)
+          azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azure_use_oidc: 'true'
+          
+          # Backend configuration for remote state
+          terraform_backend_config: |
+            storage_account_name=${{ secrets.TF_STATE_STORAGE_ACCOUNT }}
+            container_name=tfstate
+            resource_group_name=${{ secrets.TF_STATE_RESOURCE_GROUP }}
+      
+      - name: Display Results for ${{ matrix.environment }}
+        run: |
+          echo "Environment: ${{ matrix.environment }}"
+          echo "Location: ${{ matrix.location }}"
+          echo "Resources deployed: ${{ matrix.resource_types }}"
+          echo "Deployment status: ${{ steps.deploy.outputs.avm_environments_deployed }}"
+
+# Expected directory structure:
+# terraform/
+#   ├── dev/
+#   │   ├── resource_groups.tfvars
+#   │   ├── vnets.tfvars
+#   │   └── storage_accounts.tfvars
+#   ├── test/
+#   │   ├── resource_groups.tfvars
+#   │   └── vnets.tfvars
+#   └── prod/
+#       ├── resource_groups.tfvars
+#       ├── vnets.tfvars
+#       └── storage_accounts.tfvars

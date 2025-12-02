@@ -42,6 +42,24 @@ inputs:
     required: false
     default: ''
   
+  # AVM (Azure Verified Modules) support
+  enable_avm_mode:
+    description: 'Enable AVM modules mode for deploying Azure resources using Azure Verified Modules'
+    required: false
+    default: 'false'
+  avm_environments:
+    description: 'Comma-separated list of environments to deploy (e.g., "dev", "dev,test,prod"). Each environment should have a corresponding folder in terraform_working_dir'
+    required: false
+    default: ''
+  avm_resource_types:
+    description: 'Comma-separated list of resource types to deploy (e.g., "resource_groups,vnets,storage_accounts"). Corresponds to tfvars filenames'
+    required: false
+    default: 'resource_groups,vnets,storage_accounts'
+  avm_location:
+    description: 'Default Azure location for resources (e.g., "eastus", "westeurope"). Can be overridden per resource in tfvars'
+    required: false
+    default: 'eastus'
+  
   # Drift detection
   enable_drift_detection:
     description: 'Enable drift detection (runs plan with detailed-exitcode and reports changes)'
@@ -92,6 +110,8 @@ outputs:
     description: 'Exit code from Terraform plan (0=no changes, 1=error, 2=changes detected)'
   drift_detected:
     description: 'Whether drift was detected (true/false, only set when enable_drift_detection=true)'
+  avm_environments_deployed:
+    description: 'Comma-separated list of environments that were successfully deployed (only set when enable_avm_mode=true)'
 
 runs:
   using: 'docker'
@@ -108,6 +128,12 @@ runs:
     INPUT_TERRAFORM_BACKEND_CONFIG: ${{ inputs.terraform_backend_config }}
     INPUT_TERRAFORM_VAR_FILE: ${{ inputs.terraform_var_file }}
     INPUT_TERRAFORM_EXTRA_ARGS: ${{ inputs.terraform_extra_args }}
+    
+    # AVM support
+    INPUT_ENABLE_AVM_MODE: ${{ inputs.enable_avm_mode }}
+    INPUT_AVM_ENVIRONMENTS: ${{ inputs.avm_environments }}
+    INPUT_AVM_RESOURCE_TYPES: ${{ inputs.avm_resource_types }}
+    INPUT_AVM_LOCATION: ${{ inputs.avm_location }}
     
     # Drift detection
     INPUT_ENABLE_DRIFT_DETECTION: ${{ inputs.enable_drift_detection }}
