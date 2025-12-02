@@ -17,6 +17,12 @@ This document outlines the planned features and improvements for tf-avm-action.
 - Example workflows
 - Unit testing framework
 - Performance metrics
+- **🆕 Azure Verified Modules (AVM) support**
+  - Multi-environment deployment (dev, test, uat, staging, prod)
+  - Tfvars-driven configuration
+  - Support for resource groups, VNets, and storage accounts
+  - Azure CAF naming conventions and tagging standards
+  - Comprehensive documentation and examples
 
 ### 🔄 In Progress
 

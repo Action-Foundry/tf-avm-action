@@ -28,6 +28,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance timing metrics (overall and per-tool)
 - SHA256 checksum verification for GitHub CLI downloads
 - Input validation to prevent injection attacks
+- **🆕 Azure Verified Modules (AVM) Support**:
+  - `enable_avm_mode` input to enable AVM deployments
+  - `avm_environments` input for selecting deployment environments
+  - `avm_resource_types` input for selecting resource types to deploy
+  - `avm_location` input for default Azure location
+  - `avm_environments_deployed` output for deployment status
+  - AVM deployment orchestration script (scripts/avm-deploy.sh)
+  - Support for resource groups, VNets, and storage accounts
+  - Multi-environment deployment (dev, test, uat, staging, prod)
+  - Tfvars-driven configuration approach
+  - Auto-generation of Terraform configurations from user tfvars
+  - Azure CAF naming convention compliance
+  - Azure CAF tagging standards implementation
+  - AVM_MODULES.md comprehensive documentation
+  - ONBOARDING.md for new contributors
+  - Example AVM workflow files (single-env, multi-env, matrix)
+  - Example tfvars files for dev and prod environments
+  - Unit tests for AVM deployment functionality (7 tests)
 
 ### Changed
 - Pinned Alpine base image to 3.21.0 for consistency with documentation
