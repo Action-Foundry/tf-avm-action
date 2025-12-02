@@ -75,7 +75,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const plan = fs.readFileSync('${{ env.TF_WORKING_DIR }}/plan.txt', 'utf8');
+            // Read plan with size limit to prevent issues with very large plans
+            const planPath = '${{ env.TF_WORKING_DIR }}/plan.txt';
+            const stats = fs.statSync(planPath);
+            const maxSize = 50000; // 50KB limit for plan output
+            let plan = fs.readFileSync(planPath, 'utf8');
+            if (stats.size > maxSize) {
+              plan = plan.substring(0, maxSize) + '\n\n... (plan truncated, see full output in workflow logs)';
+            }
             
             const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`

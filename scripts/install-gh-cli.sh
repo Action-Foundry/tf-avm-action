@@ -67,7 +67,8 @@ install_gh_cli() {
     fi
     
     # Download and verify checksums if available
-    if curl -sSfL --max-time 30 -o "checksums.txt" "$checksum_url" 2>/dev/null; then
+    local checksum_timeout=300
+    if curl -sSfL --max-time "$checksum_timeout" -o "checksums.txt" "$checksum_url" 2>/dev/null; then
         log_info "Verifying checksum..."
         local expected_checksum
         expected_checksum=$(grep "gh_${version}_linux_${arch}.tar.gz" checksums.txt | awk '{print $1}')

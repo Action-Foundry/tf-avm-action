@@ -17,9 +17,10 @@ validate_input() {
     local name="$2"
     
     # Check for potentially malicious characters
-    if [[ "$input" =~ [^a-zA-Z0-9._-] ]]; then
+    # Allow alphanumeric, dots, hyphens, underscores, and plus signs (for build metadata)
+    if [[ "$input" =~ [^a-zA-Z0-9._+-] ]]; then
         log_error "Invalid characters in ${name}: ${input}"
-        log_error "Only alphanumeric, dots, hyphens, and underscores are allowed"
+        log_error "Only alphanumeric, dots, hyphens, underscores, and plus signs are allowed"
         exit 1
     fi
     
@@ -57,21 +58,33 @@ GH_RESOLVED=""
 
 # Install Terraform
 log_header "Installing Terraform"
+TF_START=$(date +%s)
 output=$(/scripts/install-terraform.sh "$TERRAFORM_VERSION" "$ARCH")
 echo "$output"
 TF_RESOLVED=$(echo "$output" | grep "TERRAFORM_VERSION_RESOLVED=" | cut -d'=' -f2)
+TF_END=$(date +%s)
+TF_DURATION=$((TF_END - TF_START))
+log_info "Terraform installation took ${TF_DURATION}s"
 
 # Install Azure CLI
 log_header "Installing Azure CLI"
+AZ_START=$(date +%s)
 output=$(/scripts/install-azure-cli.sh "$AZURE_CLI_VERSION")
 echo "$output"
 AZ_RESOLVED=$(echo "$output" | grep "AZURE_CLI_VERSION_RESOLVED=" | cut -d'=' -f2)
+AZ_END=$(date +%s)
+AZ_DURATION=$((AZ_END - AZ_START))
+log_info "Azure CLI installation took ${AZ_DURATION}s"
 
 # Install GitHub CLI
 log_header "Installing GitHub CLI"
+GH_START=$(date +%s)
 output=$(/scripts/install-gh-cli.sh "$GH_CLI_VERSION" "$ARCH")
 echo "$output"
 GH_RESOLVED=$(echo "$output" | grep "GH_CLI_VERSION_RESOLVED=" | cut -d'=' -f2)
+GH_END=$(date +%s)
+GH_DURATION=$((GH_END - GH_START))
+log_info "GitHub CLI installation took ${GH_DURATION}s"
 
 echo ""
 log_header "Installation Complete"
