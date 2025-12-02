@@ -4,6 +4,7 @@
 
 # Source common library
 # shellcheck source=scripts/lib/common.sh
+# shellcheck disable=SC1091
 source /scripts/lib/common.sh
 
 # Input environment variables (set by action.yml)
