@@ -33,7 +33,7 @@ resolve_version() {
         log_info "Resolving latest GitHub CLI version..."
         # Fetch latest version from GitHub Releases API
         local latest
-        latest=$(curl -sSf "https://api.github.com/repos/cli/cli/releases/latest" | jq -r '.tag_name')
+        latest=$(curl -sSf --max-time 30 "https://api.github.com/repos/cli/cli/releases/latest" | jq -r '.tag_name')
         
         if [[ -z "$latest" || "$latest" == "null" ]]; then
             log_error "Failed to resolve latest GitHub CLI version"
@@ -72,7 +72,7 @@ install_gh_cli() {
     cd "$temp_dir"
     
     # Download the tarball
-    if ! curl -sSfL -o "gh.tar.gz" "$download_url"; then
+    if ! curl -sSfL --max-time 300 -o "gh.tar.gz" "$download_url"; then
         log_error "Failed to download GitHub CLI from: $download_url"
         log_error "Version ${version} may not exist. Check available versions at:"
         log_error "https://github.com/cli/cli/releases"

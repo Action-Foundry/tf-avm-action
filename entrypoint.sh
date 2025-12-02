@@ -119,9 +119,11 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     } >> "$GITHUB_OUTPUT"
 fi
 
-# Add tools to PATH for subsequent steps
+# Add tools to PATH for subsequent steps (only if not already present)
 if [[ -n "${GITHUB_PATH:-}" ]]; then
-    echo "/usr/local/bin" >> "$GITHUB_PATH"
+    if ! echo "$PATH" | grep -q "/usr/local/bin"; then
+        echo "/usr/local/bin" >> "$GITHUB_PATH"
+    fi
 fi
 
 log_header "Setup Complete - Tools are ready!"

@@ -33,7 +33,7 @@ resolve_version() {
         log_info "Resolving latest Terraform version..."
         # Fetch latest version from HashiCorp releases API
         local latest
-        latest=$(curl -sSf "https://api.releases.hashicorp.com/v1/releases/terraform/latest" | jq -r '.version')
+        latest=$(curl -sSf --max-time 30 "https://api.releases.hashicorp.com/v1/releases/terraform/latest" | jq -r '.version')
         
         if [[ -z "$latest" || "$latest" == "null" ]]; then
             log_error "Failed to resolve latest Terraform version"
@@ -72,7 +72,7 @@ install_terraform() {
     cd "$temp_dir"
     
     # Download the zip and checksums
-    if ! curl -sSfL -o "terraform.zip" "$download_url"; then
+    if ! curl -sSfL --max-time 300 -o "terraform.zip" "$download_url"; then
         log_error "Failed to download Terraform from: $download_url"
         log_error "Version ${version} may not exist. Check available versions at:"
         log_error "https://releases.hashicorp.com/terraform/"
@@ -80,7 +80,7 @@ install_terraform() {
         exit 1
     fi
     
-    if curl -sSfL -o "SHA256SUMS" "$checksum_url" 2>/dev/null; then
+    if curl -sSfL --max-time 30 -o "SHA256SUMS" "$checksum_url" 2>/dev/null; then
         log_info "Verifying checksum..."
         # Extract the expected checksum for our file
         expected_checksum=$(grep "terraform_${version}_linux_${arch}.zip" SHA256SUMS | awk '{print $1}')
