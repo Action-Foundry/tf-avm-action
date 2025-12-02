@@ -2,32 +2,9 @@
 # entrypoint.sh - Main entrypoint for the tf-avm-action
 # This script installs the requested tool versions and sets up the environment
 
-set -euo pipefail
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
-}
-
-log_header() {
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE} $1${NC}"
-    echo -e "${BLUE}========================================${NC}"
-}
+# Source common library
+# shellcheck source=scripts/lib/common.sh
+source /scripts/lib/common.sh
 
 # Input environment variables (set by action.yml)
 TERRAFORM_VERSION="${INPUT_TERRAFORM_VERSION:-latest}"
@@ -35,23 +12,6 @@ AZURE_CLI_VERSION="${INPUT_AZURE_CLI_VERSION:-latest}"
 GH_CLI_VERSION="${INPUT_GH_CLI_VERSION:-latest}"
 
 # Detect architecture
-detect_arch() {
-    local arch
-    arch=$(uname -m)
-    case "$arch" in
-        x86_64)
-            echo "amd64"
-            ;;
-        aarch64|arm64)
-            echo "arm64"
-            ;;
-        *)
-            log_error "Unsupported architecture: $arch"
-            exit 1
-            ;;
-    esac
-}
-
 ARCH=$(detect_arch)
 
 log_header "tf-avm-action: Setting up tools"

@@ -155,10 +155,12 @@ jobs:
 
 ### Image Security
 
-- Built on **Alpine Linux 3.19** - minimal base image with security updates
+- Built on **Alpine Linux 3.21** - minimal base image with security updates
 - **Non-essential packages removed** - only required dependencies installed
 - **No cached credentials** - clean image without stored secrets
 - **Regular updates** - base image updated with security patches
+
+For more security information, see our [Security Policy](SECURITY.md).
 
 ### Best Practices
 
@@ -170,7 +172,7 @@ jobs:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Alpine Linux 3.19                       │
+│                      Alpine Linux 3.21                       │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
 │  │  Terraform  │  │  Azure CLI  │  │  GitHub CLI │          │
