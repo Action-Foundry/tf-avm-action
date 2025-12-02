@@ -1,0 +1,53 @@
+# Terraform Plan Only Example
+# Demonstrates the new 'plan' command for PR reviews
+# Runs init + plan without applying changes
+
+name: Terraform Plan on PR
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  TF_WORKING_DIR: './terraform'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Run Terraform Plan
+        id: plan
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          terraform_version: '1.9.3'
+          terraform_command: 'plan'  # Runs init + plan only
+          terraform_working_dir: ${{ env.TF_WORKING_DIR }}
+          
+          # Azure authentication (OIDC mode)
+          azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azure_use_oidc: 'true'
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "📋 Terraform plan completed successfully!"
+          echo "Review the logs above for planned changes."

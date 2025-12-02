@@ -1,0 +1,60 @@
+# Terraform Destroy Example
+# Demonstrates the new 'destroy' command to tear down infrastructure
+# Use with caution - this will destroy all managed resources!
+
+name: Terraform Destroy Infrastructure
+
+on:
+  workflow_dispatch:  # Manual trigger only for safety
+    inputs:
+      confirm_destroy:
+        description: 'Type "DESTROY" to confirm'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_WORKING_DIR: './terraform'
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    # Safety check: This workflow only runs if the user types "DESTROY" (see 'if' condition below).
+    # Recommendation: For production, configure additional safeguards in GitHub repository settings, such as:
+    #   - Required approvals from specific users
+    #   - Branch protection rules
+    #   - Environment protection rules
+    if: github.event.inputs.confirm_destroy == 'DESTROY'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Destroy Infrastructure
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          terraform_version: '1.9.3'
+          terraform_command: 'destroy'  # Runs init + plan + destroy
+          terraform_working_dir: ${{ env.TF_WORKING_DIR }}
+          
+          # Azure authentication (OIDC mode)
+          azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azure_use_oidc: 'true'
+          
+          # Optional: Variables file
+          terraform_var_file: 'prod.tfvars'
+
+      - name: Destruction complete
+        run: echo "⚠️ Infrastructure has been destroyed"

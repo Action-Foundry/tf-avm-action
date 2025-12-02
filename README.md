@@ -19,11 +19,46 @@
 
 ## 📋 Inputs
 
+### Tool Versions
+
 | Input | Description | Default | Required |
 |-------|-------------|---------|----------|
 | `terraform_version` | Terraform version to install (e.g., `1.9.3`, `latest`) | `latest` | No |
 | `azure_cli_version` | Azure CLI version to install (e.g., `2.64.0`, `latest`) | `latest` | No |
 | `gh_cli_version` | GitHub CLI version to install (e.g., `2.63.1`, `latest`) | `latest` | No |
+
+### Terraform Workflow (⭐ NEW)
+
+| Input | Description | Default | Required |
+|-------|-------------|---------|----------|
+| `terraform_command` | Workflow command: `full` (init+plan+apply), `plan` (init+plan), `destroy` (init+plan+destroy), `none` (skip) | `none` | No |
+| `terraform_working_dir` | Working directory for Terraform operations | `.` | No |
+| `terraform_backend_config` | Backend configuration parameters (space-separated) | | No |
+| `terraform_var_file` | Path to Terraform variables file | | No |
+| `terraform_extra_args` | Additional arguments for Terraform commands | | No |
+
+### Drift Detection (⭐ NEW)
+
+| Input | Description | Default | Required |
+|-------|-------------|---------|----------|
+| `enable_drift_detection` | Enable drift detection with detailed exit codes | `false` | No |
+| `drift_create_issue` | Create GitHub issue when drift is detected | `false` | No |
+
+### Azure Authentication (⭐ NEW)
+
+| Input | Description | Default | Required |
+|-------|-------------|---------|----------|
+| `azure_client_id` | Azure service principal client ID | | No |
+| `azure_client_secret` | Azure service principal client secret (not needed for OIDC) | | No |
+| `azure_subscription_id` | Azure subscription ID | | No |
+| `azure_tenant_id` | Azure tenant ID | | No |
+| `azure_use_oidc` | Use OIDC for Azure authentication | `false` | No |
+
+### GitHub CLI Authentication (⭐ NEW)
+
+| Input | Description | Default | Required |
+|-------|-------------|---------|----------|
+| `gh_token` | GitHub token (defaults to `GITHUB_TOKEN` if not provided) | | No |
 
 ## 📤 Outputs
 
@@ -32,12 +67,85 @@
 | `terraform_version_resolved` | The actual Terraform version that was installed |
 | `azure_cli_version_resolved` | The actual Azure CLI version that was installed |
 | `gh_cli_version_resolved` | The actual GitHub CLI version that was installed |
+| `terraform_plan_exitcode` | Exit code from Terraform plan (0=no changes, 1=error, 2=changes) |
+| `drift_detected` | Whether drift was detected (`true`/`false`) |
 
 ## 📖 Usage
 
-> **💡 More Examples**: Check out the [examples/](examples/) directory for comprehensive real-world scenarios including OIDC authentication, multi-environment deployments, and drift detection.
+> **💡 More Examples**: Check out the [examples/](examples/) directory for comprehensive real-world scenarios including the new simplified workflows, drift detection, and authentication options.
 
-### Basic Usage (Latest Versions)
+### 🚀 Quick Start: Simplified Terraform Workflow (⭐ NEW)
+
+The easiest way to deploy infrastructure with this action:
+
+```yaml
+name: Infrastructure Deployment
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Deploy Infrastructure
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          terraform_command: 'full'  # Runs init + plan + apply
+          terraform_working_dir: './terraform'
+          azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azure_use_oidc: 'true'
+```
+
+### Plan Only (for Pull Requests)
+
+```yaml
+- name: Terraform Plan
+  uses: Action-Foundry/tf-avm-action@v1
+  with:
+    terraform_command: 'plan'  # Runs init + plan only
+    terraform_working_dir: './terraform'
+    azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+    azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+    azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    azure_use_oidc: 'true'
+```
+
+### 🔍 Drift Detection (⭐ NEW)
+
+Automatically detect infrastructure drift and create GitHub issues:
+
+```yaml
+- name: Detect Drift
+  uses: Action-Foundry/tf-avm-action@v1
+  with:
+    terraform_command: 'plan'
+    terraform_working_dir: './terraform'
+    enable_drift_detection: 'true'
+    drift_create_issue: 'true'
+    gh_token: ${{ secrets.GITHUB_TOKEN }}
+    azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+    azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+    azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    azure_use_oidc: 'true'
+```
+
+### Basic Tool Setup (No Terraform Execution)
 
 ```yaml
 name: Infrastructure Deployment
@@ -51,6 +159,7 @@ jobs:
       
       - name: Setup Terraform + Azure CLI + GitHub CLI
         uses: Action-Foundry/tf-avm-action@v1
+        # terraform_command defaults to 'none' - only installs tools
         
       - name: Verify tools
         run: |
@@ -102,50 +211,44 @@ jobs:
           echo "GitHub CLI: ${{ steps.setup.outputs.gh_cli_version_resolved }}"
 ```
 
-### Complete Terraform + Azure Workflow
+### Service Principal Authentication (Alternative to OIDC)
 
 ```yaml
-name: Terraform Azure Deployment
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-env:
-  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-
-jobs:
-  terraform:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Terraform + Azure CLI + GitHub CLI
-        uses: Action-Foundry/tf-avm-action@v1
-        with:
-          terraform_version: '1.9.3'
-
-      - name: Azure Login
-        run: |
-          az login --service-principal \
-            -u $ARM_CLIENT_ID \
-            -p $ARM_CLIENT_SECRET \
-            --tenant $ARM_TENANT_ID
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
-
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve tfplan
+- name: Deploy with Service Principal
+  uses: Action-Foundry/tf-avm-action@v1
+  with:
+    terraform_command: 'full'
+    terraform_working_dir: './terraform'
+    
+    # Service Principal authentication
+    azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+    azure_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+    azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+    azure_use_oidc: 'false'
 ```
+
+### Destroy Infrastructure
+
+```yaml
+- name: Destroy Infrastructure
+  uses: Action-Foundry/tf-avm-action@v1
+  with:
+    terraform_command: 'destroy'  # Runs init + plan + destroy
+    terraform_working_dir: './terraform'
+    azure_use_oidc: 'true'
+```
+
+## 🎯 Terraform Workflow Commands
+
+The action now provides three intuitive workflow commands:
+
+| Command | Actions | Use Case |
+|---------|---------|----------|
+| `full` | init → plan → apply | Deploy infrastructure |
+| `plan` | init → plan | Review changes (PRs) |
+| `destroy` | init → plan → destroy | Tear down infrastructure |
+| `none` | (skip) | Only install tools |
 
 ## 🔒 Security Considerations
 

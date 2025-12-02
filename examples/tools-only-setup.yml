@@ -1,0 +1,50 @@
+# Tools-Only Setup Example
+# Shows how to use the action to just install tools without running Terraform
+# Useful when you want to run custom Terraform commands
+
+name: Custom Terraform Workflow
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  custom-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Tools Only
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          terraform_version: '1.9.3'
+          azure_cli_version: '2.64.0'
+          gh_cli_version: '2.63.1'
+          terraform_command: 'none'  # Don't run any Terraform workflow
+          
+          # Authentication handled by built-in auth
+          azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azure_use_oidc: 'true'
+
+      - name: Run Custom Terraform Commands
+        working-directory: ./terraform
+        run: |
+          terraform init
+          terraform workspace select prod || terraform workspace new prod
+          terraform plan -out=tfplan
+          
+          # Custom validation or processing here
+          
+          terraform apply -auto-approve tfplan
+
+      - name: Custom post-deployment steps
+        run: |
+          echo "Running custom post-deployment tasks..."
+          # Your custom logic here
