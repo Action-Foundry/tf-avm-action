@@ -8,6 +8,16 @@
 # shellcheck disable=SC1091
 source "$(dirname "$0")/lib/common.sh"
 
+# Source AVM modules registry
+# shellcheck source=scripts/lib/avm-modules-registry.sh
+# shellcheck disable=SC1091
+source "$(dirname "$0")/lib/avm-modules-registry.sh"
+
+# Source AVM template generator
+# shellcheck source=scripts/lib/avm-template-generator.sh
+# shellcheck disable=SC1091
+source "$(dirname "$0")/lib/avm-template-generator.sh"
+
 # Input parameters
 ENABLE_AVM_MODE="${1:-false}"
 AVM_ENVIRONMENTS="${2:-}"
@@ -56,14 +66,25 @@ IFS=',' read -ra RESOURCE_TYPES <<< "$AVM_RESOURCE_TYPES"
 DEPLOYED_ENVIRONMENTS=()
 
 # Function to generate Terraform configuration for a resource type
+# This function now supports all 102 AVM modules using a data-driven approach
 generate_terraform_config() {
     local resource_type="$1"
     local config_file="$2"
     
     log_info "Generating Terraform configuration for: $resource_type"
     
+    # Check if this module is supported in the registry
+    if ! get_avm_module_source "$resource_type" > /dev/null 2>&1; then
+        log_error "Unsupported resource type: $resource_type"
+        log_error "Please check the AVM modules registry or update to use a supported module name"
+        return 1
+    fi
+    
+    # For modules with special handling requirements, use custom templates
+    # Otherwise, use the generic template generator
     case "$resource_type" in
-        resource_groups)
+        resource_groups|resources_resourcegroup)
+            # Custom template for resource groups (no resource_group_name needed)
             cat > "$config_file" << 'EOF'
 # Resource Groups using AVM module
 # https://registry.terraform.io/modules/Azure/avm-res-resources-resourcegroup/azurerm/latest
@@ -72,7 +93,7 @@ variable "resource_groups" {
   description = "Map of resource groups to create"
   type = map(object({
     name     = string
-    location = string
+    location = optional(string)
     tags     = optional(map(string), {})
   }))
   default = {}
@@ -108,7 +129,7 @@ module "resource_groups" {
 output "resource_group_ids" {
   description = "Map of resource group IDs"
   value = {
-    for k, rg in module.resource_groups : k => rg.resource_id
+    for k, rg in module.resource_groups : k => try(rg.resource_id, rg.id)
   }
 }
 
@@ -121,7 +142,8 @@ output "resource_group_names" {
 EOF
             ;;
             
-        vnets)
+        vnets|network_virtualnetwork)
+            # Custom template for VNets with subnets support
             cat > "$config_file" << 'EOF'
 # Virtual Networks using AVM module
 # https://registry.terraform.io/modules/Azure/avm-res-network-virtualnetwork/azurerm/latest
@@ -130,7 +152,7 @@ variable "vnets" {
   description = "Map of virtual networks to create"
   type = map(object({
     name                = string
-    location            = string
+    location            = optional(string)
     resource_group_name = string
     address_space       = list(string)
     subnets = optional(map(object({
@@ -182,7 +204,7 @@ module "vnets" {
 output "vnet_ids" {
   description = "Map of virtual network IDs"
   value = {
-    for k, vnet in module.vnets : k => vnet.resource_id
+    for k, vnet in module.vnets : k => try(vnet.resource_id, vnet.id)
   }
 }
 
@@ -195,7 +217,8 @@ output "vnet_names" {
 EOF
             ;;
             
-        storage_accounts)
+        storage_accounts|storage_storageaccount)
+            # Custom template for storage accounts with specific properties
             cat > "$config_file" << 'EOF'
 # Storage Accounts using AVM module
 # https://registry.terraform.io/modules/Azure/avm-res-storage-storageaccount/azurerm/latest
@@ -204,7 +227,7 @@ variable "storage_accounts" {
   description = "Map of storage accounts to create"
   type = map(object({
     name                     = string
-    location                 = string
+    location                 = optional(string)
     resource_group_name      = string
     account_tier             = optional(string, "Standard")
     account_replication_type = optional(string, "LRS")
@@ -249,7 +272,7 @@ module "storage_accounts" {
 output "storage_account_ids" {
   description = "Map of storage account IDs"
   value = {
-    for k, sa in module.storage_accounts : k => sa.resource_id
+    for k, sa in module.storage_accounts : k => try(sa.resource_id, sa.id)
   }
 }
 
@@ -263,8 +286,12 @@ EOF
             ;;
             
         *)
-            log_error "Unsupported resource type: $resource_type"
-            return 1
+            # Use generic template generator for all other modules
+            # This covers the remaining 99+ AVM modules using a DRY approach
+            if ! generate_generic_avm_config "$resource_type" "$config_file"; then
+                log_error "Failed to generate configuration for: $resource_type"
+                return 1
+            fi
             ;;
     esac
     

@@ -185,6 +185,160 @@ repository/
 
 ## Supported Resource Types
 
+**🎉 All 102 AVM Modules Supported!**
+
+This action now supports **all 102 Azure Verified Modules** using a data-driven, DRY (Don't Repeat Yourself) architecture. You can use any of the modules listed below by specifying the resource type in the `avm_resource_types` input.
+
+### Quick Reference: All Supported Modules
+
+The following table lists all 102 supported AVM modules. Simply use the **Resource Type** value in your `avm_resource_types` input.
+
+| # | Resource Type | Description | AVM Module |
+|---|---------------|-------------|------------|
+| 01 | `apimanagement_service` | API Management Service | [avm-res-apimanagement-service](https://registry.terraform.io/modules/Azure/avm-res-apimanagement-service/azurerm) |
+| 02 | `app_containerapp` | Container App | [avm-res-app-containerapp](https://registry.terraform.io/modules/Azure/avm-res-app-containerapp/azurerm) |
+| 03 | `app_job` | App Job | [avm-res-app-job](https://registry.terraform.io/modules/Azure/avm-res-app-job/azurerm) |
+| 04 | `app_managedenvironment` | App Managed Environment | [avm-res-app-managedenvironment](https://registry.terraform.io/modules/Azure/avm-res-app-managedenvironment/azurerm) |
+| 05 | `appconfiguration_configurationstore` | App Configuration Store | [avm-res-appconfiguration-configurationstore](https://registry.terraform.io/modules/Azure/avm-res-appconfiguration-configurationstore/azurerm) |
+| 06 | `authorization_roleassignment` | Role Assignment | [avm-res-authorization-roleassignment](https://registry.terraform.io/modules/Azure/avm-res-authorization-roleassignment/azurerm) |
+| 07 | `automation_automationaccount` | Automation Account | [avm-res-automation-automationaccount](https://registry.terraform.io/modules/Azure/avm-res-automation-automationaccount/azurerm) |
+| 08 | `avs_privatecloud` | AVS Private Cloud | [avm-res-avs-privatecloud](https://registry.terraform.io/modules/Azure/avm-res-avs-privatecloud/azurerm) |
+| 09 | `azurestackhci_cluster` | Azure Stack HCI Cluster | [avm-res-azurestackhci-cluster](https://registry.terraform.io/modules/Azure/avm-res-azurestackhci-cluster/azurerm) |
+| 10 | `azurestackhci_logicalnetwork` | Azure Stack HCI Logical Network | [avm-res-azurestackhci-logicalnetwork](https://registry.terraform.io/modules/Azure/avm-res-azurestackhci-logicalnetwork/azurerm) |
+| 11 | `azurestackhci_virtualmachineinstance` | Azure Stack HCI VM Instance | [avm-res-azurestackhci-virtualmachineinstance](https://registry.terraform.io/modules/Azure/avm-res-azurestackhci-virtualmachineinstance/azurerm) |
+| 12 | `batch_batchaccount` | Batch Account | [avm-res-batch-batchaccount](https://registry.terraform.io/modules/Azure/avm-res-batch-batchaccount/azurerm) |
+| 13 | `cache_redis` | Redis Cache | [avm-res-cache-redis](https://registry.terraform.io/modules/Azure/avm-res-cache-redis/azurerm) |
+| 14 | `cdn_profile` | CDN Profile | [avm-res-cdn-profile](https://registry.terraform.io/modules/Azure/avm-res-cdn-profile/azurerm) |
+| 15 | `certificateregistration_certificateorder` | Certificate Order | [avm-res-certificateregistration-certificateorder](https://registry.terraform.io/modules/Azure/avm-res-certificateregistration-certificateorder/azurerm) |
+| 16 | `cognitiveservices_account` | Cognitive Services Account | [avm-res-cognitiveservices-account](https://registry.terraform.io/modules/Azure/avm-res-cognitiveservices-account/azurerm) |
+| 17 | `communication_emailservice` | Communication Email Service | [avm-res-communication-emailservice](https://registry.terraform.io/modules/Azure/avm-res-communication-emailservice/azurerm) |
+| 18 | `compute_capacityreservationgroup` | Capacity Reservation Group | [avm-res-compute-capacityreservationgroup](https://registry.terraform.io/modules/Azure/avm-res-compute-capacityreservationgroup/azurerm) |
+| 19 | `compute_disk` | Compute Disk | [avm-res-compute-disk](https://registry.terraform.io/modules/Azure/avm-res-compute-disk/azurerm) |
+| 20 | `compute_diskencryptionset` | Disk Encryption Set | [avm-res-compute-diskencryptionset](https://registry.terraform.io/modules/Azure/avm-res-compute-diskencryptionset/azurerm) |
+| 21 | `compute_gallery` | Compute Gallery | [avm-res-compute-gallery](https://registry.terraform.io/modules/Azure/avm-res-compute-gallery/azurerm) |
+| 22 | `compute_hostgroup` | Host Group | [avm-res-compute-hostgroup](https://registry.terraform.io/modules/Azure/avm-res-compute-hostgroup/azurerm) |
+| 23 | `compute_proximityplacementgroup` | Proximity Placement Group | [avm-res-compute-proximityplacementgroup](https://registry.terraform.io/modules/Azure/avm-res-compute-proximityplacementgroup/azurerm) |
+| 24 | `compute_sshpublickey` | SSH Public Key | [avm-res-compute-sshpublickey](https://registry.terraform.io/modules/Azure/avm-res-compute-sshpublickey/azurerm) |
+| 25 | `compute_virtualmachine` | Virtual Machine | [avm-res-compute-virtualmachine](https://registry.terraform.io/modules/Azure/avm-res-compute-virtualmachine/azurerm) |
+| 26 | `compute_virtualmachinescaleset` | VM Scale Set | [avm-res-compute-virtualmachinescaleset](https://registry.terraform.io/modules/Azure/avm-res-compute-virtualmachinescaleset/azurerm) |
+| 27 | `containerinstance_containergroup` | Container Instance Group | [avm-res-containerinstance-containergroup](https://registry.terraform.io/modules/Azure/avm-res-containerinstance-containergroup/azurerm) |
+| 28 | `containerregistry_registry` | Container Registry | [avm-res-containerregistry-registry](https://registry.terraform.io/modules/Azure/avm-res-containerregistry-registry/azurerm) |
+| 29 | `containerservice_managedcluster` | AKS Managed Cluster | [avm-res-containerservice-managedcluster](https://registry.terraform.io/modules/Azure/avm-res-containerservice-managedcluster/azurerm) |
+| 30 | `databricks_workspace` | Databricks Workspace | [avm-res-databricks-workspace](https://registry.terraform.io/modules/Azure/avm-res-databricks-workspace/azurerm) |
+| 31 | `datafactory_factory` | Data Factory | [avm-res-datafactory-factory](https://registry.terraform.io/modules/Azure/avm-res-datafactory-factory/azurerm) |
+| 32 | `dataprotection_backupvault` | Data Protection Backup Vault | [avm-res-dataprotection-backupvault](https://registry.terraform.io/modules/Azure/avm-res-dataprotection-backupvault/azurerm) |
+| 33 | `dataprotection_resourceguard` | Data Protection Resource Guard | [avm-res-dataprotection-resourceguard](https://registry.terraform.io/modules/Azure/avm-res-dataprotection-resourceguard/azurerm) |
+| 34 | `dbformysql_flexibleserver` | MySQL Flexible Server | [avm-res-dbformysql-flexibleserver](https://registry.terraform.io/modules/Azure/avm-res-dbformysql-flexibleserver/azurerm) |
+| 35 | `dbforpostgresql_flexibleserver` | PostgreSQL Flexible Server | [avm-res-dbforpostgresql-flexibleserver](https://registry.terraform.io/modules/Azure/avm-res-dbforpostgresql-flexibleserver/azurerm) |
+| 36 | `desktopvirtualization_applicationgroup` | AVD Application Group | [avm-res-desktopvirtualization-applicationgroup](https://registry.terraform.io/modules/Azure/avm-res-desktopvirtualization-applicationgroup/azurerm) |
+| 37 | `desktopvirtualization_hostpool` | AVD Host Pool | [avm-res-desktopvirtualization-hostpool](https://registry.terraform.io/modules/Azure/avm-res-desktopvirtualization-hostpool/azurerm) |
+| 38 | `desktopvirtualization_scalingplan` | AVD Scaling Plan | [avm-res-desktopvirtualization-scalingplan](https://registry.terraform.io/modules/Azure/avm-res-desktopvirtualization-scalingplan/azurerm) |
+| 39 | `desktopvirtualization_workspace` | AVD Workspace | [avm-res-desktopvirtualization-workspace](https://registry.terraform.io/modules/Azure/avm-res-desktopvirtualization-workspace/azurerm) |
+| 40 | `devcenter_devcenter` | Dev Center | [avm-res-devcenter-devcenter](https://registry.terraform.io/modules/Azure/avm-res-devcenter-devcenter/azurerm) |
+| 41 | `devopsinfrastructure_pool` | DevOps Pool | [avm-res-devopsinfrastructure-pool](https://registry.terraform.io/modules/Azure/avm-res-devopsinfrastructure-pool/azurerm) |
+| 42 | `documentdb_databaseaccount` | Cosmos DB Account | [avm-res-documentdb-databaseaccount](https://registry.terraform.io/modules/Azure/avm-res-documentdb-databaseaccount/azurerm) |
+| 43 | `documentdb_mongocluster` | Cosmos DB MongoDB Cluster | [avm-res-documentdb-mongocluster](https://registry.terraform.io/modules/Azure/avm-res-documentdb-mongocluster/azurerm) |
+| 44 | `edge_site` | Azure Arc Site | [avm-res-edge-site](https://registry.terraform.io/modules/Azure/avm-res-edge-site/azurerm) |
+| 45 | `eventhub_namespace` | Event Hub Namespace | [avm-res-eventhub-namespace](https://registry.terraform.io/modules/Azure/avm-res-eventhub-namespace/azurerm) |
+| 46 | `features_feature` | AFEC Feature | [avm-res-features-feature](https://registry.terraform.io/modules/Azure/avm-res-features-feature/azurerm) |
+| 47 | `hybridcontainerservice_provisionedclusterinstance` | AKS Arc Cluster | [avm-res-hybridcontainerservice-provisionedclusterinstance](https://registry.terraform.io/modules/Azure/avm-res-hybridcontainerservice-provisionedclusterinstance/azurerm) |
+| 48 | `insights_autoscalesetting` | Auto Scale Setting | [avm-res-insights-autoscalesetting](https://registry.terraform.io/modules/Azure/avm-res-insights-autoscalesetting/azurerm) |
+| 49 | `insights_component` | Application Insights | [avm-res-insights-component](https://registry.terraform.io/modules/Azure/avm-res-insights-component/azurerm) |
+| 50 | `insights_datacollectionendpoint` | Data Collection Endpoint | [avm-res-insights-datacollectionendpoint](https://registry.terraform.io/modules/Azure/avm-res-insights-datacollectionendpoint/azurerm) |
+| 51 | `keyvault_vault` | Key Vault | [avm-res-keyvault-vault](https://registry.terraform.io/modules/Azure/avm-res-keyvault-vault/azurerm) |
+| 52 | `kusto_cluster` | Kusto Cluster | [avm-res-kusto-cluster](https://registry.terraform.io/modules/Azure/avm-res-kusto-cluster/azurerm) |
+| 53 | `logic_workflow` | Logic App Workflow | [avm-res-logic-workflow](https://registry.terraform.io/modules/Azure/avm-res-logic-workflow/azurerm) |
+| 54 | `machinelearningservices_workspace` | ML Workspace | [avm-res-machinelearningservices-workspace](https://registry.terraform.io/modules/Azure/avm-res-machinelearningservices-workspace/azurerm) |
+| 55 | `maintenance_maintenanceconfiguration` | Maintenance Configuration | [avm-res-maintenance-maintenanceconfiguration](https://registry.terraform.io/modules/Azure/avm-res-maintenance-maintenanceconfiguration/azurerm) |
+| 56 | `managedidentity_userassignedidentity` | User Assigned Identity | [avm-res-managedidentity-userassignedidentity](https://registry.terraform.io/modules/Azure/avm-res-managedidentity-userassignedidentity/azurerm) |
+| 57 | `management_servicegroup` | Management Service Group | [avm-res-management-servicegroup](https://registry.terraform.io/modules/Azure/avm-res-management-servicegroup/azurerm) |
+| 58 | `netapp_netappaccount` | NetApp Account | [avm-res-netapp-netappaccount](https://registry.terraform.io/modules/Azure/avm-res-netapp-netappaccount/azurerm) |
+| 59 | `network_applicationgateway` | Application Gateway | [avm-res-network-applicationgateway](https://registry.terraform.io/modules/Azure/avm-res-network-applicationgateway/azurerm) |
+| 60 | `network_applicationgatewaywafpolicy` | App Gateway WAF Policy | [avm-res-network-applicationgatewaywafpolicy](https://registry.terraform.io/modules/Azure/avm-res-network-applicationgatewaywafpolicy/azurerm) |
+| 61 | `network_applicationsecuritygroup` | Application Security Group | [avm-res-network-applicationsecuritygroup](https://registry.terraform.io/modules/Azure/avm-res-network-applicationsecuritygroup/azurerm) |
+| 62 | `network_azurefirewall` | Azure Firewall | [avm-res-network-azurefirewall](https://registry.terraform.io/modules/Azure/avm-res-network-azurefirewall/azurerm) |
+| 63 | `network_bastionhost` | Bastion Host | [avm-res-network-bastionhost](https://registry.terraform.io/modules/Azure/avm-res-network-bastionhost/azurerm) |
+| 64 | `network_connection` | VNet Gateway Connection | [avm-res-network-connection](https://registry.terraform.io/modules/Azure/avm-res-network-connection/azurerm) |
+| 65 | `network_ddosprotectionplan` | DDoS Protection Plan | [avm-res-network-ddosprotectionplan](https://registry.terraform.io/modules/Azure/avm-res-network-ddosprotectionplan/azurerm) |
+| 66 | `network_dnsresolver` | DNS Resolver | [avm-res-network-dnsresolver](https://registry.terraform.io/modules/Azure/avm-res-network-dnsresolver/azurerm) |
+| 67 | `network_dnszone` | Public DNS Zone | [avm-res-network-dnszone](https://registry.terraform.io/modules/Azure/avm-res-network-dnszone/azurerm) |
+| 68 | `network_expressroutecircuit` | ExpressRoute Circuit | [avm-res-network-expressroutecircuit](https://registry.terraform.io/modules/Azure/avm-res-network-expressroutecircuit/azurerm) |
+| 69 | `network_firewallpolicy` | Firewall Policy | [avm-res-network-firewallpolicy](https://registry.terraform.io/modules/Azure/avm-res-network-firewallpolicy/azurerm) |
+| 70 | `network_frontdoorwafpolicy` | Front Door WAF Policy | [avm-res-network-frontdoorwafpolicy](https://registry.terraform.io/modules/Azure/avm-res-network-frontdoorwafpolicy/azurerm) |
+| 71 | `network_ipgroup` | IP Group | [avm-res-network-ipgroup](https://registry.terraform.io/modules/Azure/avm-res-network-ipgroup/azurerm) |
+| 72 | `network_loadbalancer` | Load Balancer | [avm-res-network-loadbalancer](https://registry.terraform.io/modules/Azure/avm-res-network-loadbalancer/azurerm) |
+| 73 | `network_localnetworkgateway` | Local Network Gateway | [avm-res-network-localnetworkgateway](https://registry.terraform.io/modules/Azure/avm-res-network-localnetworkgateway/azurerm) |
+| 74 | `network_natgateway` | NAT Gateway | [avm-res-network-natgateway](https://registry.terraform.io/modules/Azure/avm-res-network-natgateway/azurerm) |
+| 75 | `network_networkinterface` | Network Interface | [avm-res-network-networkinterface](https://registry.terraform.io/modules/Azure/avm-res-network-networkinterface/azurerm) |
+| 76 | `network_networkmanager` | Virtual Network Manager | [avm-res-network-networkmanager](https://registry.terraform.io/modules/Azure/avm-res-network-networkmanager/azurerm) |
+| 77 | `network_networksecuritygroup` | Network Security Group | [avm-res-network-networksecuritygroup](https://registry.terraform.io/modules/Azure/avm-res-network-networksecuritygroup/azurerm) |
+| 78 | `network_networkwatcher` | Network Watcher | [avm-res-network-networkwatcher](https://registry.terraform.io/modules/Azure/avm-res-network-networkwatcher/azurerm) |
+| 79 | `network_privatednszone` | Private DNS Zone | [avm-res-network-privatednszone](https://registry.terraform.io/modules/Azure/avm-res-network-privatednszone/azurerm) |
+| 80 | `network_privateendpoint` | Private Endpoint | [avm-res-network-privateendpoint](https://registry.terraform.io/modules/Azure/avm-res-network-privateendpoint/azurerm) |
+| 81 | `network_publicipaddress` | Public IP Address | [avm-res-network-publicipaddress](https://registry.terraform.io/modules/Azure/avm-res-network-publicipaddress/azurerm) |
+| 82 | `network_publicipprefix` | Public IP Prefix | [avm-res-network-publicipprefix](https://registry.terraform.io/modules/Azure/avm-res-network-publicipprefix/azurerm) |
+| 83 | `network_routetable` | Route Table | [avm-res-network-routetable](https://registry.terraform.io/modules/Azure/avm-res-network-routetable/azurerm) |
+| 84 | `network_virtualnetwork` (or `vnets`) | Virtual Network | [avm-res-network-virtualnetwork](https://registry.terraform.io/modules/Azure/avm-res-network-virtualnetwork/azurerm) |
+| 85 | `operationalinsights_workspace` | Log Analytics Workspace | [avm-res-operationalinsights-workspace](https://registry.terraform.io/modules/Azure/avm-res-operationalinsights-workspace/azurerm) |
+| 86 | `oracledatabase_cloudexadatainfrastructure` | Oracle Exadata Infrastructure | [avm-res-oracledatabase-cloudexadatainfrastructure](https://registry.terraform.io/modules/Azure/avm-res-oracledatabase-cloudexadatainfrastructure/azurerm) |
+| 87 | `oracledatabase_cloudvmcluster` | Oracle VM Cluster | [avm-res-oracledatabase-cloudvmcluster](https://registry.terraform.io/modules/Azure/avm-res-oracledatabase-cloudvmcluster/azurerm) |
+| 88 | `portal_dashboard` | Portal Dashboard | [avm-res-portal-dashboard](https://registry.terraform.io/modules/Azure/avm-res-portal-dashboard/azurerm) |
+| 89 | `recoveryservices_vault` | Recovery Services Vault | [avm-res-recoveryservices-vault](https://registry.terraform.io/modules/Azure/avm-res-recoveryservices-vault/azurerm) |
+| 90 | `redhatopenshift_openshiftcluster` | OpenShift Cluster | [avm-res-redhatopenshift-openshiftcluster](https://registry.terraform.io/modules/Azure/avm-res-redhatopenshift-openshiftcluster/azurerm) |
+| 91 | `resourcegraph_query` | Resource Graph Query | [avm-res-resourcegraph-query](https://registry.terraform.io/modules/Azure/avm-res-resourcegraph-query/azurerm) |
+| 92 | `resources_resourcegroup` (or `resource_groups`) | Resource Group | [avm-res-resources-resourcegroup](https://registry.terraform.io/modules/Azure/avm-res-resources-resourcegroup/azurerm) |
+| 93 | `search_searchservice` | Search Service | [avm-res-search-searchservice](https://registry.terraform.io/modules/Azure/avm-res-search-searchservice/azurerm) |
+| 94 | `servicebus_namespace` | Service Bus Namespace | [avm-res-servicebus-namespace](https://registry.terraform.io/modules/Azure/avm-res-servicebus-namespace/azurerm) |
+| 95 | `sql_managedinstance` | SQL Managed Instance | [avm-res-sql-managedinstance](https://registry.terraform.io/modules/Azure/avm-res-sql-managedinstance/azurerm) |
+| 96 | `sql_server` | SQL Server | [avm-res-sql-server](https://registry.terraform.io/modules/Azure/avm-res-sql-server/azurerm) |
+| 97 | `storage_storageaccount` (or `storage_accounts`) | Storage Account | [avm-res-storage-storageaccount](https://registry.terraform.io/modules/Azure/avm-res-storage-storageaccount/azurerm) |
+| 98 | `web_connection` | API Connection | [avm-res-web-connection](https://registry.terraform.io/modules/Azure/avm-res-web-connection/azurerm) |
+| 99 | `web_hostingenvironment` | App Service Environment | [avm-res-web-hostingenvironment](https://registry.terraform.io/modules/Azure/avm-res-web-hostingenvironment/azurerm) |
+| 100 | `web_serverfarm` | App Service Plan | [avm-res-web-serverfarm](https://registry.terraform.io/modules/Azure/avm-res-web-serverfarm/azurerm) |
+| 101 | `web_site` | Web/Function App | [avm-res-web-site](https://registry.terraform.io/modules/Azure/avm-res-web-site/azurerm) |
+| 102 | `web_staticsite` | Static Web App | [avm-res-web-staticsite](https://registry.terraform.io/modules/Azure/avm-res-web-staticsite/azurerm) |
+
+### Usage Example: Multiple Module Types
+
+```yaml
+- name: Deploy Multiple Resource Types
+  uses: Action-Foundry/tf-avm-action@v1
+  with:
+    enable_avm_mode: 'true'
+    avm_environments: 'dev'
+    # Specify any combination of the 102 supported modules
+    avm_resource_types: 'resource_groups,keyvault_vault,sql_server,containerservice_managedcluster'
+    terraform_working_dir: './terraform'
+    azure_use_oidc: 'true'
+```
+
+### Generic tfvars Format
+
+For most modules (except those with special requirements like VNets with subnets), use this generic format:
+
+**terraform/dev/`<resource_type>`.tfvars**:
+```hcl
+<resource_type> = {
+  resource1 = {
+    name                = "<resource-name>"
+    location            = "eastus"  # Optional, defaults to avm_location
+    resource_group_name = "<resource-group-name>"
+    tags = {
+      environment = "dev"
+      owner       = "team-name"
+    }
+    # Additional module-specific properties can be added here
+    # Refer to the specific AVM module documentation for available options
+  }
+}
+```
+
+For detailed examples and module-specific configurations, refer to the sections below and the individual AVM module documentation.
+
+---
+
+## Detailed Module Examples
+
 ### Resource Groups
 
 **Module**: `Azure/avm-res-resources-resourcegroup/azurerm`
