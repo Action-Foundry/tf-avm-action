@@ -2,8 +2,7 @@
 # This Dockerfile creates a minimal, secure runtime environment
 
 # Use Alpine as the base image for minimal footprint
-# Alpine 3.21 provides latest security patches and package updates
-FROM alpine:3.21
+FROM alpine:3.22
 
 # Labels for image metadata (OCI Image Specification)
 LABEL org.opencontainers.image.title="tf-avm-action"
