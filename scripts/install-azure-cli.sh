@@ -2,27 +2,14 @@
 # install-azure-cli.sh - Install Azure CLI with version support
 # Supports "latest" and specific version numbers
 
-set -euo pipefail
+# Determine the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source common library
+# shellcheck source=lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
 
 VERSION="${1:-latest}"
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
-}
 
 # Resolve "latest" to actual version
 resolve_version() {
@@ -33,7 +20,7 @@ resolve_version() {
         echo "latest"
     else
         # Remove 'v' prefix if present
-        echo "${version#v}"
+        normalize_version "$version"
     fi
 }
 

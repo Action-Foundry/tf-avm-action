@@ -2,28 +2,15 @@
 # install-terraform.sh - Install Terraform with version support
 # Supports "latest" and specific version numbers
 
-set -euo pipefail
+# Determine the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source common library
+# shellcheck source=lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
 
 VERSION="${1:-latest}"
 ARCH="${2:-amd64}"
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
-}
 
 # Resolve "latest" to actual version
 resolve_version() {
@@ -43,7 +30,7 @@ resolve_version() {
         echo "$latest"
     else
         # Remove 'v' prefix if present
-        echo "${version#v}"
+        normalize_version "$version"
     fi
 }
 
@@ -67,33 +54,28 @@ install_terraform() {
     local temp_dir
     temp_dir=$(mktemp -d)
     
+    # Ensure cleanup on exit
+    # shellcheck disable=SC2064
+    trap "rm -rf '$temp_dir'" EXIT
+    
     log_info "Downloading Terraform v${version} for linux/${arch}..."
     
-    cd "$temp_dir"
+    cd "$temp_dir" || exit 1
     
     # Download the zip and checksums
     if ! curl -sSfL --max-time 300 -o "terraform.zip" "$download_url"; then
         log_error "Failed to download Terraform from: $download_url"
         log_error "Version ${version} may not exist. Check available versions at:"
         log_error "https://releases.hashicorp.com/terraform/"
-        rm -rf "$temp_dir"
         exit 1
     fi
     
     if curl -sSfL --max-time 30 -o "SHA256SUMS" "$checksum_url" 2>/dev/null; then
         log_info "Verifying checksum..."
         # Extract the expected checksum for our file
+        local expected_checksum
         expected_checksum=$(grep "terraform_${version}_linux_${arch}.zip" SHA256SUMS | awk '{print $1}')
-        actual_checksum=$(sha256sum terraform.zip | awk '{print $1}')
-        
-        if [[ "$expected_checksum" != "$actual_checksum" ]]; then
-            log_error "Checksum verification failed!"
-            log_error "Expected: $expected_checksum"
-            log_error "Actual:   $actual_checksum"
-            rm -rf "$temp_dir"
-            exit 1
-        fi
-        log_info "Checksum verified successfully"
+        verify_checksum "terraform.zip" "$expected_checksum"
     else
         log_warn "Could not download checksums file, skipping verification"
     fi
@@ -103,9 +85,8 @@ install_terraform() {
     mv terraform /usr/local/bin/
     chmod +x /usr/local/bin/terraform
     
-    # Cleanup
+    # Cleanup is handled by trap
     cd /
-    rm -rf "$temp_dir"
     
     log_info "Terraform v${version} installed successfully"
 }

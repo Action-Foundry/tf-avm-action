@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# GitHub
+.github
+
+# Documentation (not needed in container)
+*.md
+!README.md
+LICENSE
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
