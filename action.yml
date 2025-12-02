@@ -57,14 +57,7 @@ inputs:
     description: 'GitHub token for authentication (defaults to GITHUB_TOKEN if not provided)'
     required: false
     default: ''
-  gh_app_id:
-    description: 'GitHub App ID for authentication (alternative to gh_token)'
-    required: false
-    default: ''
-  gh_app_private_key:
-    description: 'GitHub App private key for authentication (requires gh_app_id)'
-    required: false
-    default: ''
+
   
   # Azure authentication
   azure_client_id:
@@ -122,8 +115,6 @@ runs:
     
     # GitHub CLI authentication
     INPUT_GH_TOKEN: ${{ inputs.gh_token }}
-    INPUT_GH_APP_ID: ${{ inputs.gh_app_id }}
-    INPUT_GH_APP_PRIVATE_KEY: ${{ inputs.gh_app_private_key }}
     
     # Azure authentication
     INPUT_AZURE_CLIENT_ID: ${{ inputs.azure_client_id }}

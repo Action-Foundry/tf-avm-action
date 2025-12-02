@@ -26,8 +26,6 @@ DRIFT_CREATE_ISSUE="${INPUT_DRIFT_CREATE_ISSUE:-false}"
 
 # GitHub CLI authentication
 GH_TOKEN="${INPUT_GH_TOKEN:-}"
-GH_APP_ID="${INPUT_GH_APP_ID:-}"
-GH_APP_PRIVATE_KEY="${INPUT_GH_APP_PRIVATE_KEY:-}"
 
 # Azure authentication
 AZURE_CLIENT_ID="${INPUT_AZURE_CLIENT_ID:-}"
@@ -160,8 +158,8 @@ log_info "⏱️  Setup completed in ${DURATION} seconds"
 echo ""
 
 # GitHub CLI Authentication
-if [[ -n "$GH_TOKEN" ]] || [[ -n "$GH_APP_ID" ]] || [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    /scripts/auth-github.sh "$GH_TOKEN" "$GH_APP_ID" "$GH_APP_PRIVATE_KEY"
+if [[ -n "$GH_TOKEN" ]] || [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    /scripts/auth-github.sh "$GH_TOKEN"
     echo ""
 fi
 

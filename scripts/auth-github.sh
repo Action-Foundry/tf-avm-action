@@ -1,6 +1,6 @@
 #!/bin/bash
 # auth-github.sh - GitHub CLI authentication handler
-# Handles authentication for GitHub CLI with support for tokens, GitHub Apps, and workflow defaults
+# Handles authentication for GitHub CLI with support for tokens and workflow defaults
 
 # Source common library
 # shellcheck source=scripts/lib/common.sh
@@ -9,26 +9,14 @@ source "$(dirname "$0")/lib/common.sh"
 
 # Input parameters
 GH_TOKEN="${1:-}"
-GH_APP_ID="${2:-}"
-GH_APP_PRIVATE_KEY="${3:-}"
 
 log_header "GitHub CLI Authentication"
 
 # Priority order:
-# 1. GitHub App authentication (if app_id and private_key provided)
-# 2. Personal Access Token (if gh_token provided)
-# 3. Workflow default token (GITHUB_TOKEN)
+# 1. Personal Access Token (if gh_token provided)
+# 2. Workflow default token (GITHUB_TOKEN)
 
-if [[ -n "$GH_APP_ID" ]] && [[ -n "$GH_APP_PRIVATE_KEY" ]]; then
-    log_info "Authenticating as GitHub App (ID: $GH_APP_ID)"
-    
-    # GitHub App authentication requires generating a JWT and exchanging it for an installation token
-    # This is a complex process that typically requires additional tools
-    log_error "GitHub App authentication is not yet implemented"
-    log_error "Please use a Personal Access Token or workflow default token"
-    exit 1
-    
-elif [[ -n "$GH_TOKEN" ]]; then
+if [[ -n "$GH_TOKEN" ]]; then
     log_info "Authenticating with provided GitHub token"
     echo "$GH_TOKEN" | gh auth login --with-token
     

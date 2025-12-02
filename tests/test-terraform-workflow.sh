@@ -95,7 +95,18 @@ echo ""
 
 # Test terraform workflow with 'none' command (should exit successfully)
 echo "Testing Terraform workflow with 'none' command..."
-if bash "${SCRIPT_DIR}/../scripts/run-terraform-workflow.sh" "none" "." "" "" "" "false" "false" &>/dev/null; then
+# Using named variables for clarity and maintainability
+TERRAFORM_CMD="none"
+WORKING_DIR="."
+BACKEND_CONFIG=""
+VAR_FILE=""
+EXTRA_ARGS=""
+DRIFT_DETECTION="false"
+CREATE_ISSUE="false"
+
+if bash "${SCRIPT_DIR}/../scripts/run-terraform-workflow.sh" \
+    "$TERRAFORM_CMD" "$WORKING_DIR" "$BACKEND_CONFIG" "$VAR_FILE" "$EXTRA_ARGS" "$DRIFT_DETECTION" "$CREATE_ISSUE" \
+    &>/dev/null; then
     echo "✓ PASS: Terraform workflow with 'none' command exits successfully"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else
@@ -108,7 +119,10 @@ echo ""
 
 # Test invalid command
 echo "Testing Terraform workflow with invalid command..."
-if ! bash "${SCRIPT_DIR}/../scripts/run-terraform-workflow.sh" "invalid" "." "" "" "" "false" "false" &>/dev/null; then
+TERRAFORM_CMD="invalid"
+if ! bash "${SCRIPT_DIR}/../scripts/run-terraform-workflow.sh" \
+    "$TERRAFORM_CMD" "$WORKING_DIR" "$BACKEND_CONFIG" "$VAR_FILE" "$EXTRA_ARGS" "$DRIFT_DETECTION" "$CREATE_ISSUE" \
+    &>/dev/null; then
     echo "✓ PASS: Terraform workflow rejects invalid command"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else
@@ -121,7 +135,15 @@ echo ""
 
 # Test Azure auth with no credentials (should skip gracefully)
 echo "Testing Azure authentication with no credentials..."
-if bash "${SCRIPT_DIR}/../scripts/auth-azure.sh" "" "" "" "" "false" &>/dev/null; then
+AZURE_CLIENT_ID=""
+AZURE_CLIENT_SECRET=""
+AZURE_SUBSCRIPTION_ID=""
+AZURE_TENANT_ID=""
+AZURE_USE_OIDC="false"
+
+if bash "${SCRIPT_DIR}/../scripts/auth-azure.sh" \
+    "$AZURE_CLIENT_ID" "$AZURE_CLIENT_SECRET" "$AZURE_SUBSCRIPTION_ID" "$AZURE_TENANT_ID" "$AZURE_USE_OIDC" \
+    &>/dev/null; then
     echo "✓ PASS: Azure auth skips gracefully with no credentials"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else
@@ -134,7 +156,9 @@ echo ""
 
 # Test GitHub auth with no credentials (should handle gracefully)
 echo "Testing GitHub authentication with no credentials..."
-if bash "${SCRIPT_DIR}/../scripts/auth-github.sh" "" "" "" &>/dev/null; then
+GH_TOKEN=""
+
+if bash "${SCRIPT_DIR}/../scripts/auth-github.sh" "$GH_TOKEN" &>/dev/null; then
     echo "✓ PASS: GitHub auth handles no credentials gracefully"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else

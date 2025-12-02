@@ -59,8 +59,6 @@
 | Input | Description | Default | Required |
 |-------|-------------|---------|----------|
 | `gh_token` | GitHub token (defaults to `GITHUB_TOKEN` if not provided) | | No |
-| `gh_app_id` | GitHub App ID (alternative to token) | | No |
-| `gh_app_private_key` | GitHub App private key (requires `gh_app_id`) | | No |
 
 ## 📤 Outputs
 

@@ -23,6 +23,10 @@ jobs:
   destroy:
     runs-on: ubuntu-latest
     # Safety check: only run if user typed DESTROY
+    # Note: For production, consider adding additional safeguards:
+    # - Required approvals from specific users
+    # - Branch protection rules
+    # - Environment protection rules
     if: github.event.inputs.confirm_destroy == 'DESTROY'
     
     steps:

@@ -16,6 +16,62 @@ TERRAFORM_EXTRA_ARGS="${5:-}"
 ENABLE_DRIFT_DETECTION="${6:-false}"
 DRIFT_CREATE_ISSUE="${7:-false}"
 
+# Function to create drift detection issue
+# Must be defined before usage
+create_drift_issue() {
+    local plan_output
+    plan_output=$(cat plan-output.txt 2>/dev/null || echo "Plan output not available")
+    
+    # Check if there's already an open drift detection issue
+    local existing_issue
+    existing_issue=$(gh issue list --label "drift-detection" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+    
+    local issue_body
+    issue_body="## Infrastructure Drift Detected
+
+Automated drift detection found differences between the Terraform configuration and actual infrastructure state.
+
+**Detection Date:** $(date --iso-8601=seconds)
+**Workflow Run:** ${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-unknown}/actions/runs/${GITHUB_RUN_ID:-unknown}
+**Working Directory:** $TERRAFORM_WORKING_DIR
+
+### Plan Output
+
+<details>
+<summary>Show Terraform Plan</summary>
+
+\`\`\`terraform
+$plan_output
+\`\`\`
+
+</details>
+
+### Action Required
+
+Please review the changes and either:
+1. Update the infrastructure to match the configuration
+2. Update the configuration to match the infrastructure
+3. Apply the Terraform changes if they are expected
+"
+    
+    if [[ -z "$existing_issue" ]]; then
+        # Create new issue
+        gh issue create \
+            --title "Infrastructure Drift Detected - $(date +%Y-%m-%d)" \
+            --label "drift-detection,infrastructure" \
+            --body "$issue_body" 2>/dev/null || log_warn "Failed to create drift detection issue"
+    else
+        # Update existing issue
+        gh issue comment "$existing_issue" \
+            --body "## New Drift Detection - $(date +%Y-%m-%d)
+
+Another drift detection run found continued differences.
+
+**Workflow Run:** ${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-unknown}/actions/runs/${GITHUB_RUN_ID:-unknown}" \
+            2>/dev/null || log_warn "Failed to update drift detection issue"
+    fi
+}
+
 # Validate terraform command
 if [[ "$TERRAFORM_COMMAND" == "none" ]]; then
     log_info "Terraform command is 'none', skipping Terraform workflow"
@@ -134,8 +190,9 @@ if [[ "$ENABLE_DRIFT_DETECTION" == "true" ]]; then
     fi
 else
     # Regular plan without detailed exit code
+    # Note: VAR_FILE_ARGS and TERRAFORM_EXTRA_ARGS must NOT be quoted to allow proper word splitting
     # shellcheck disable=SC2086
-    if terraform plan -out=tfplan -input=false $VAR_FILE_ARGS $TERRAFORM_EXTRA_ARGS; then
+    if terraform plan -out=tfplan -input=false ${VAR_FILE_ARGS} ${TERRAFORM_EXTRA_ARGS}; then
         log_info "Terraform plan successful"
     else
         log_error "Terraform plan failed"
@@ -160,8 +217,9 @@ case "$TERRAFORM_COMMAND" in
         log_header "Terraform Apply"
         log_info "Applying planned changes..."
         
+        # Note: TERRAFORM_EXTRA_ARGS must NOT be quoted to allow proper word splitting
         # shellcheck disable=SC2086
-        if terraform apply -auto-approve tfplan $TERRAFORM_EXTRA_ARGS; then
+        if terraform apply -auto-approve tfplan ${TERRAFORM_EXTRA_ARGS}; then
             log_info "Terraform apply successful"
         else
             log_error "Terraform apply failed"
@@ -174,8 +232,9 @@ case "$TERRAFORM_COMMAND" in
         log_warn "WARNING: This will destroy all resources managed by this Terraform configuration!"
         log_info "Destroying resources..."
         
+        # Note: VAR_FILE_ARGS and TERRAFORM_EXTRA_ARGS must NOT be quoted to allow proper word splitting
         # shellcheck disable=SC2086
-        if terraform destroy -auto-approve $VAR_FILE_ARGS $TERRAFORM_EXTRA_ARGS; then
+        if terraform destroy -auto-approve ${VAR_FILE_ARGS} ${TERRAFORM_EXTRA_ARGS}; then
             log_info "Terraform destroy successful"
         else
             log_error "Terraform destroy failed"
@@ -193,58 +252,3 @@ log_info "Command: $TERRAFORM_COMMAND"
 if [[ "$ENABLE_DRIFT_DETECTION" == "true" ]]; then
     log_info "Drift detected: $DRIFT_DETECTED"
 fi
-
-# Function to create drift detection issue
-create_drift_issue() {
-    local plan_output
-    plan_output=$(cat plan-output.txt 2>/dev/null || echo "Plan output not available")
-    
-    # Check if there's already an open drift detection issue
-    local existing_issue
-    existing_issue=$(gh issue list --label "drift-detection" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
-    
-    local issue_body
-    issue_body="## Infrastructure Drift Detected
-
-Automated drift detection found differences between the Terraform configuration and actual infrastructure state.
-
-**Detection Date:** $(date --iso-8601=seconds)
-**Workflow Run:** ${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-unknown}/actions/runs/${GITHUB_RUN_ID:-unknown}
-**Working Directory:** $TERRAFORM_WORKING_DIR
-
-### Plan Output
-
-<details>
-<summary>Show Terraform Plan</summary>
-
-\`\`\`terraform
-$plan_output
-\`\`\`
-
-</details>
-
-### Action Required
-
-Please review the changes and either:
-1. Update the infrastructure to match the configuration
-2. Update the configuration to match the infrastructure
-3. Apply the Terraform changes if they are expected
-"
-    
-    if [[ -z "$existing_issue" ]]; then
-        # Create new issue
-        gh issue create \
-            --title "Infrastructure Drift Detected - $(date +%Y-%m-%d)" \
-            --label "drift-detection,infrastructure" \
-            --body "$issue_body" 2>/dev/null || log_warn "Failed to create drift detection issue"
-    else
-        # Update existing issue
-        gh issue comment "$existing_issue" \
-            --body "## New Drift Detection - $(date +%Y-%m-%d)
-
-Another drift detection run found continued differences.
-
-**Workflow Run:** ${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-unknown}/actions/runs/${GITHUB_RUN_ID:-unknown}" \
-            2>/dev/null || log_warn "Failed to update drift detection issue"
-    fi
-}
