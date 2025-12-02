@@ -98,7 +98,7 @@ permissions:
 
 ### Container Security
 
-- Built on **Alpine Linux 3.19** - minimal base image with regular security updates
+- Built on **Alpine Linux 3.21** - minimal base image with regular security updates
 - Non-essential packages are not installed
 - No cached credentials in the image
 - Dependencies are regularly updated via Dependabot

@@ -52,19 +52,14 @@ install_terraform() {
     local download_url="https://releases.hashicorp.com/terraform/${version}/terraform_${version}_linux_${arch}.zip"
     local checksum_url="https://releases.hashicorp.com/terraform/${version}/terraform_${version}_SHA256SUMS"
     local temp_dir
-    temp_dir=$(mktemp -d)
-    
-    # Ensure cleanup on exit
-    # shellcheck disable=SC2064
-    trap "rm -rf '$temp_dir'" EXIT
+    temp_dir=$(create_temp_dir)
     
     log_info "Downloading Terraform v${version} for linux/${arch}..."
     
     cd "$temp_dir" || exit 1
     
     # Download the zip and checksums
-    if ! curl -sSfL --max-time 300 -o "terraform.zip" "$download_url"; then
-        log_error "Failed to download Terraform from: $download_url"
+    if ! download_file "$download_url" "terraform.zip" 300; then
         log_error "Version ${version} may not exist. Check available versions at:"
         log_error "https://releases.hashicorp.com/terraform/"
         exit 1
@@ -85,7 +80,7 @@ install_terraform() {
     mv terraform /usr/local/bin/
     chmod +x /usr/local/bin/terraform
     
-    # Cleanup is handled by trap
+    # Cleanup is handled by trap set in create_temp_dir
     cd /
     
     log_info "Terraform v${version} installed successfully"

@@ -52,19 +52,14 @@ install_gh_cli() {
     local arch="$2"
     local download_url="https://github.com/cli/cli/releases/download/v${version}/gh_${version}_linux_${arch}.tar.gz"
     local temp_dir
-    temp_dir=$(mktemp -d)
-    
-    # Ensure cleanup on exit
-    # shellcheck disable=SC2064
-    trap "rm -rf '$temp_dir'" EXIT
+    temp_dir=$(create_temp_dir)
     
     log_info "Downloading GitHub CLI v${version} for linux/${arch}..."
     
     cd "$temp_dir" || exit 1
     
     # Download the tarball
-    if ! curl -sSfL --max-time 300 -o "gh.tar.gz" "$download_url"; then
-        log_error "Failed to download GitHub CLI from: $download_url"
+    if ! download_file "$download_url" "gh.tar.gz" 300; then
         log_error "Version ${version} may not exist. Check available versions at:"
         log_error "https://github.com/cli/cli/releases"
         exit 1
@@ -75,7 +70,7 @@ install_gh_cli() {
     mv "gh_${version}_linux_${arch}/bin/gh" /usr/local/bin/
     chmod +x /usr/local/bin/gh
     
-    # Cleanup is handled by trap
+    # Cleanup is handled by trap set in create_temp_dir
     cd /
     
     log_info "GitHub CLI v${version} installed successfully"
