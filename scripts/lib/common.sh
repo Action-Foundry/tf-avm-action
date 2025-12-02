@@ -28,11 +28,11 @@ fi
 
 # Logging functions
 log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
+    echo -e "${GREEN}[INFO]${NC} $1" >&2
 }
 
 log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
+    echo -e "${YELLOW}[WARN]${NC} $1" >&2
 }
 
 log_error() {
@@ -41,14 +41,14 @@ log_error() {
 
 log_debug() {
     if [[ "${DEBUG:-}" == "1" ]]; then
-        echo -e "${BLUE}[DEBUG]${NC} $1"
+        echo -e "${BLUE}[DEBUG]${NC} $1" >&2
     fi
 }
 
 log_header() {
-    echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE} $1${NC}"
-    echo -e "${BLUE}========================================${NC}"
+    echo -e "${BLUE}========================================${NC}" >&2
+    echo -e "${BLUE} $1${NC}" >&2
+    echo -e "${BLUE}========================================${NC}" >&2
 }
 
 # Detect system architecture
