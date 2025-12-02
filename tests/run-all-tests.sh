@@ -24,6 +24,17 @@ fi
 
 echo ""
 
+# Run installation scripts tests
+echo "Running installation scripts tests..."
+if bash "${SCRIPT_DIR}/test-install-scripts.sh"; then
+    echo "✓ Installation scripts tests passed"
+else
+    echo "✗ Installation scripts tests failed"
+    OVERALL_STATUS=1
+fi
+
+echo ""
+
 # Run Terraform workflow tests
 echo "Running Terraform workflow tests..."
 if bash "${SCRIPT_DIR}/test-terraform-workflow.sh"; then
