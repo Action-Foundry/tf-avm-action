@@ -1,0 +1,37 @@
+name: 'Terraform + Azure CLI + GitHub CLI Action'
+description: 'Enterprise-grade Docker-based GitHub Action that provides Terraform, Azure CLI, and GitHub CLI in a minimal, secure runtime environment'
+author: 'Action-Foundry'
+
+branding:
+  icon: 'terminal'
+  color: 'purple'
+
+inputs:
+  terraform_version:
+    description: 'Terraform version to install (e.g., "latest", "1.9.3")'
+    required: false
+    default: 'latest'
+  azure_cli_version:
+    description: 'Azure CLI version to install (e.g., "latest", "2.64.0")'
+    required: false
+    default: 'latest'
+  gh_cli_version:
+    description: 'GitHub CLI version to install (e.g., "latest", "2.63.1")'
+    required: false
+    default: 'latest'
+
+outputs:
+  terraform_version_resolved:
+    description: 'The actual Terraform version that was installed'
+  azure_cli_version_resolved:
+    description: 'The actual Azure CLI version that was installed'
+  gh_cli_version_resolved:
+    description: 'The actual GitHub CLI version that was installed'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    INPUT_TERRAFORM_VERSION: ${{ inputs.terraform_version }}
+    INPUT_AZURE_CLI_VERSION: ${{ inputs.azure_cli_version }}
+    INPUT_GH_CLI_VERSION: ${{ inputs.gh_cli_version }}
