@@ -1,0 +1,52 @@
+# Terraform Full Workflow Example
+# Demonstrates the new 'full' command that runs init + plan + apply
+# This is the simplest way to deploy infrastructure with the action
+
+name: Terraform Full Deployment
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_WORKING_DIR: './terraform'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Infrastructure with Terraform
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          terraform_version: '1.9.3'
+          terraform_command: 'full'  # Runs init + plan + apply
+          terraform_working_dir: ${{ env.TF_WORKING_DIR }}
+          
+          # Azure authentication (OIDC mode)
+          azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azure_use_oidc: 'true'
+          
+          # Optional: Backend configuration
+          terraform_backend_config: 'key=prod.tfstate resource_group_name=my-rg'
+          
+          # Optional: Variables file
+          terraform_var_file: 'prod.tfvars'
+
+      - name: Success notification
+        run: echo "✅ Infrastructure deployed successfully!"

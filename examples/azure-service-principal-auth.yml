@@ -1,0 +1,39 @@
+# Azure Service Principal Authentication Example
+# Demonstrates using Service Principal credentials instead of OIDC
+# Useful for environments where OIDC is not available
+
+name: Terraform with Service Principal Auth
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  TF_WORKING_DIR: './terraform'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy with Service Principal
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          terraform_version: '1.9.3'
+          terraform_command: 'full'
+          terraform_working_dir: ${{ env.TF_WORKING_DIR }}
+          
+          # Azure Service Principal authentication
+          azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          azure_use_oidc: 'false'  # Use Service Principal instead of OIDC
+
+      - name: Success
+        run: echo "✅ Deployment complete with Service Principal authentication"

@@ -19,6 +19,74 @@ inputs:
     description: 'GitHub CLI version to install (e.g., "latest", "2.63.1")'
     required: false
     default: 'latest'
+  
+  # Terraform workflow control
+  terraform_command:
+    description: 'Terraform workflow command: "full" (init+plan+apply), "plan" (init+plan), "destroy" (init+plan+destroy), or "none" (skip Terraform execution)'
+    required: false
+    default: 'none'
+  terraform_working_dir:
+    description: 'Working directory for Terraform operations (relative to repository root)'
+    required: false
+    default: '.'
+  terraform_backend_config:
+    description: 'Additional backend configuration parameters (space-separated, e.g., "key=value key2=value2")'
+    required: false
+    default: ''
+  terraform_var_file:
+    description: 'Path to Terraform variables file (relative to terraform_working_dir)'
+    required: false
+    default: ''
+  terraform_extra_args:
+    description: 'Additional arguments to pass to Terraform commands'
+    required: false
+    default: ''
+  
+  # Drift detection
+  enable_drift_detection:
+    description: 'Enable drift detection (runs plan with detailed-exitcode and reports changes)'
+    required: false
+    default: 'false'
+  drift_create_issue:
+    description: 'Create a GitHub issue when drift is detected (requires enable_drift_detection=true)'
+    required: false
+    default: 'false'
+  
+  # GitHub CLI authentication
+  gh_token:
+    description: 'GitHub token for authentication (defaults to GITHUB_TOKEN if not provided)'
+    required: false
+    default: ''
+  gh_app_id:
+    description: 'GitHub App ID for authentication (alternative to gh_token)'
+    required: false
+    default: ''
+  gh_app_private_key:
+    description: 'GitHub App private key for authentication (requires gh_app_id)'
+    required: false
+    default: ''
+  
+  # Azure authentication
+  azure_client_id:
+    description: 'Azure service principal client ID'
+    required: false
+    default: ''
+  azure_client_secret:
+    description: 'Azure service principal client secret (not needed for OIDC)'
+    required: false
+    default: ''
+  azure_subscription_id:
+    description: 'Azure subscription ID'
+    required: false
+    default: ''
+  azure_tenant_id:
+    description: 'Azure tenant ID'
+    required: false
+    default: ''
+  azure_use_oidc:
+    description: 'Use OIDC for Azure authentication (requires azure/login action to be run first)'
+    required: false
+    default: 'false'
 
 outputs:
   terraform_version_resolved:
@@ -27,11 +95,39 @@ outputs:
     description: 'The actual Azure CLI version that was installed'
   gh_cli_version_resolved:
     description: 'The actual GitHub CLI version that was installed'
+  terraform_plan_exitcode:
+    description: 'Exit code from Terraform plan (0=no changes, 1=error, 2=changes detected)'
+  drift_detected:
+    description: 'Whether drift was detected (true/false, only set when enable_drift_detection=true)'
 
 runs:
   using: 'docker'
   image: 'Dockerfile'
   env:
+    # Tool versions
     INPUT_TERRAFORM_VERSION: ${{ inputs.terraform_version }}
     INPUT_AZURE_CLI_VERSION: ${{ inputs.azure_cli_version }}
     INPUT_GH_CLI_VERSION: ${{ inputs.gh_cli_version }}
+    
+    # Terraform workflow
+    INPUT_TERRAFORM_COMMAND: ${{ inputs.terraform_command }}
+    INPUT_TERRAFORM_WORKING_DIR: ${{ inputs.terraform_working_dir }}
+    INPUT_TERRAFORM_BACKEND_CONFIG: ${{ inputs.terraform_backend_config }}
+    INPUT_TERRAFORM_VAR_FILE: ${{ inputs.terraform_var_file }}
+    INPUT_TERRAFORM_EXTRA_ARGS: ${{ inputs.terraform_extra_args }}
+    
+    # Drift detection
+    INPUT_ENABLE_DRIFT_DETECTION: ${{ inputs.enable_drift_detection }}
+    INPUT_DRIFT_CREATE_ISSUE: ${{ inputs.drift_create_issue }}
+    
+    # GitHub CLI authentication
+    INPUT_GH_TOKEN: ${{ inputs.gh_token }}
+    INPUT_GH_APP_ID: ${{ inputs.gh_app_id }}
+    INPUT_GH_APP_PRIVATE_KEY: ${{ inputs.gh_app_private_key }}
+    
+    # Azure authentication
+    INPUT_AZURE_CLIENT_ID: ${{ inputs.azure_client_id }}
+    INPUT_AZURE_CLIENT_SECRET: ${{ inputs.azure_client_secret }}
+    INPUT_AZURE_SUBSCRIPTION_ID: ${{ inputs.azure_subscription_id }}
+    INPUT_AZURE_TENANT_ID: ${{ inputs.azure_tenant_id }}
+    INPUT_AZURE_USE_OIDC: ${{ inputs.azure_use_oidc }}

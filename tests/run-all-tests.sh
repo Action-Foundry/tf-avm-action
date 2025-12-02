@@ -13,12 +13,23 @@ echo ""
 # Track overall status
 OVERALL_STATUS=0
 
-# Run unit tests
-echo "Running unit tests..."
+# Run common library tests
+echo "Running common library tests..."
 if bash "${SCRIPT_DIR}/test-common.sh"; then
-    echo "✓ Unit tests passed"
+    echo "✓ Common library tests passed"
 else
-    echo "✗ Unit tests failed"
+    echo "✗ Common library tests failed"
+    OVERALL_STATUS=1
+fi
+
+echo ""
+
+# Run Terraform workflow tests
+echo "Running Terraform workflow tests..."
+if bash "${SCRIPT_DIR}/test-terraform-workflow.sh"; then
+    echo "✓ Terraform workflow tests passed"
+else
+    echo "✗ Terraform workflow tests failed"
     OVERALL_STATUS=1
 fi
 

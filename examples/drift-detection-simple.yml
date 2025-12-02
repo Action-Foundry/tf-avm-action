@@ -1,0 +1,65 @@
+# Simple Drift Detection Example
+# Uses the new enable_drift_detection flag to detect infrastructure drift
+# Automatically creates GitHub issues when drift is detected
+
+name: Infrastructure Drift Detection
+
+on:
+  schedule:
+    # Run every day at 8 AM UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write # Required to create issues when drift is detected
+
+env:
+  TF_WORKING_DIR: './terraform'
+
+jobs:
+  drift-detection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main # Always check against main branch
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Detect Infrastructure Drift
+        id: drift
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          terraform_version: '1.9.3'
+          terraform_command: 'plan'
+          terraform_working_dir: ${{ env.TF_WORKING_DIR }}
+          
+          # Enable drift detection
+          enable_drift_detection: 'true'
+          drift_create_issue: 'true'  # Automatically create issues
+          
+          # Azure authentication (OIDC mode)
+          azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azure_use_oidc: 'true'
+          
+          # GitHub CLI authentication (for creating issues)
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check Drift Results
+        run: |
+          if [ "${{ steps.drift.outputs.drift_detected }}" = "true" ]; then
+            echo "⚠️ Infrastructure drift detected!"
+            echo "Exit code: ${{ steps.drift.outputs.terraform_plan_exitcode }}"
+          else
+            echo "✅ No infrastructure drift detected"
+          fi

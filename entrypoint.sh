@@ -8,9 +8,33 @@
 source /scripts/lib/common.sh
 
 # Input environment variables (set by action.yml)
+# Tool versions
 TERRAFORM_VERSION="${INPUT_TERRAFORM_VERSION:-latest}"
 AZURE_CLI_VERSION="${INPUT_AZURE_CLI_VERSION:-latest}"
 GH_CLI_VERSION="${INPUT_GH_CLI_VERSION:-latest}"
+
+# Terraform workflow
+TERRAFORM_COMMAND="${INPUT_TERRAFORM_COMMAND:-none}"
+TERRAFORM_WORKING_DIR="${INPUT_TERRAFORM_WORKING_DIR:-.}"
+TERRAFORM_BACKEND_CONFIG="${INPUT_TERRAFORM_BACKEND_CONFIG:-}"
+TERRAFORM_VAR_FILE="${INPUT_TERRAFORM_VAR_FILE:-}"
+TERRAFORM_EXTRA_ARGS="${INPUT_TERRAFORM_EXTRA_ARGS:-}"
+
+# Drift detection
+ENABLE_DRIFT_DETECTION="${INPUT_ENABLE_DRIFT_DETECTION:-false}"
+DRIFT_CREATE_ISSUE="${INPUT_DRIFT_CREATE_ISSUE:-false}"
+
+# GitHub CLI authentication
+GH_TOKEN="${INPUT_GH_TOKEN:-}"
+GH_APP_ID="${INPUT_GH_APP_ID:-}"
+GH_APP_PRIVATE_KEY="${INPUT_GH_APP_PRIVATE_KEY:-}"
+
+# Azure authentication
+AZURE_CLIENT_ID="${INPUT_AZURE_CLIENT_ID:-}"
+AZURE_CLIENT_SECRET="${INPUT_AZURE_CLIENT_SECRET:-}"
+AZURE_SUBSCRIPTION_ID="${INPUT_AZURE_SUBSCRIPTION_ID:-}"
+AZURE_TENANT_ID="${INPUT_AZURE_TENANT_ID:-}"
+AZURE_USE_OIDC="${INPUT_AZURE_USE_OIDC:-false}"
 
 # Validate inputs (basic sanity checks)
 validate_input() {
@@ -134,6 +158,36 @@ DURATION=$((END_TIME - START_TIME))
 echo ""
 log_info "⏱️  Setup completed in ${DURATION} seconds"
 echo ""
+
+# GitHub CLI Authentication
+if [[ -n "$GH_TOKEN" ]] || [[ -n "$GH_APP_ID" ]] || [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    /scripts/auth-github.sh "$GH_TOKEN" "$GH_APP_ID" "$GH_APP_PRIVATE_KEY"
+    echo ""
+fi
+
+# Azure Authentication
+if [[ -n "$AZURE_CLIENT_ID" ]] || [[ -n "$AZURE_TENANT_ID" ]]; then
+    /scripts/auth-azure.sh "$AZURE_CLIENT_ID" "$AZURE_CLIENT_SECRET" "$AZURE_SUBSCRIPTION_ID" "$AZURE_TENANT_ID" "$AZURE_USE_OIDC"
+    echo ""
+fi
+
+# Run Terraform Workflow
+if [[ "$TERRAFORM_COMMAND" != "none" ]]; then
+    # Convert relative path to absolute path
+    if [[ "$TERRAFORM_WORKING_DIR" != /* ]]; then
+        TERRAFORM_WORKING_DIR="${GITHUB_WORKSPACE:-/github/workspace}/${TERRAFORM_WORKING_DIR}"
+    fi
+    
+    /scripts/run-terraform-workflow.sh \
+        "$TERRAFORM_COMMAND" \
+        "$TERRAFORM_WORKING_DIR" \
+        "$TERRAFORM_BACKEND_CONFIG" \
+        "$TERRAFORM_VAR_FILE" \
+        "$TERRAFORM_EXTRA_ARGS" \
+        "$ENABLE_DRIFT_DETECTION" \
+        "$DRIFT_CREATE_ISSUE"
+    echo ""
+fi
 
 # If additional command arguments are provided, execute them
 if [[ $# -gt 0 ]]; then
