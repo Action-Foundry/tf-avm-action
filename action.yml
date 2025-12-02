@@ -1,5 +1,5 @@
 name: 'Terraform + Azure CLI + GitHub CLI Action'
-description: 'Enterprise-grade Docker-based GitHub Action that provides Terraform, Azure CLI, and GitHub CLI in a minimal, secure runtime environment'
+description: 'GitHub Action that provides Terraform, Azure CLI, and GitHub CLI in a minimal, secure runtime environment'
 author: 'Action-Foundry'
 
 branding:
