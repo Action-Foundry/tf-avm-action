@@ -1,0 +1,69 @@
+# OIDC Authentication Example
+# Most secure approach using OpenID Connect for Azure authentication
+# No long-lived secrets required!
+
+name: Azure Deployment with OIDC
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Required for OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARM_USE_OIDC: true
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform + Azure CLI
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          terraform_version: '1.9.3'
+          azure_cli_version: '2.64.0'
+
+      - name: Azure Login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Azure Login
+        run: |
+          az account show
+          az account list-locations --output table
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
+
+# Setup Instructions:
+# 1. Create an Azure AD application and service principal
+# 2. Configure federated credentials for GitHub Actions
+# 3. Add the following secrets to your repository:
+#    - AZURE_CLIENT_ID: Application (client) ID
+#    - AZURE_TENANT_ID: Directory (tenant) ID
+#    - AZURE_SUBSCRIPTION_ID: Your Azure subscription ID
+# 4. Assign appropriate Azure RBAC roles to the service principal
+#
+# For detailed setup instructions, see:
+# https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure

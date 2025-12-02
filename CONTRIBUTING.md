@@ -4,7 +4,7 @@ Thank you for your interest in contributing to tf-avm-action! This document prov
 
 ## Code of Conduct
 
-By participating in this project, you agree to maintain a welcoming and respectful environment for all contributors.
+This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project, you agree to abide by its terms and maintain a welcoming and respectful environment for all contributors.
 
 ## How to Contribute
 

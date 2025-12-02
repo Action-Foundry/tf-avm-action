@@ -1,0 +1,38 @@
+# Pinned Versions Example
+# Production-ready workflow with specific tool versions for reproducible builds
+
+name: Production Deployment with Pinned Versions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform + Azure CLI + GitHub CLI
+        id: setup
+        uses: Action-Foundry/tf-avm-action@v1
+        with:
+          # Pin specific versions for production reproducibility
+          terraform_version: '1.9.3'
+          azure_cli_version: '2.64.0'
+          gh_cli_version: '2.63.1'
+      
+      - name: Display installed versions
+        run: |
+          echo "Terraform: ${{ steps.setup.outputs.terraform_version_resolved }}"
+          echo "Azure CLI: ${{ steps.setup.outputs.azure_cli_version_resolved }}"
+          echo "GitHub CLI: ${{ steps.setup.outputs.gh_cli_version_resolved }}"
+      
+      - name: Verify installations
+        run: |
+          terraform --version
+          az --version
+          gh --version

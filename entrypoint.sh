@@ -11,10 +11,37 @@ TERRAFORM_VERSION="${INPUT_TERRAFORM_VERSION:-latest}"
 AZURE_CLI_VERSION="${INPUT_AZURE_CLI_VERSION:-latest}"
 GH_CLI_VERSION="${INPUT_GH_CLI_VERSION:-latest}"
 
+# Validate inputs (basic sanity checks)
+validate_input() {
+    local input="$1"
+    local name="$2"
+    
+    # Check for potentially malicious characters
+    # Allow alphanumeric, dots, hyphens, underscores, and plus signs (for build metadata)
+    if [[ "$input" =~ [^a-zA-Z0-9._+-] ]]; then
+        log_error "Invalid characters in ${name}: ${input}"
+        log_error "Only alphanumeric, dots, hyphens, underscores, and plus signs are allowed"
+        exit 1
+    fi
+    
+    # Check for excessively long version strings
+    if [[ ${#input} -gt 50 ]]; then
+        log_error "${name} is too long (max 50 characters): ${input}"
+        exit 1
+    fi
+}
+
+validate_input "$TERRAFORM_VERSION" "TERRAFORM_VERSION"
+validate_input "$AZURE_CLI_VERSION" "AZURE_CLI_VERSION"
+validate_input "$GH_CLI_VERSION" "GH_CLI_VERSION"
+
 # Detect architecture
 ARCH=$(detect_arch)
 
 log_header "tf-avm-action: Setting up tools"
+
+# Start timing
+START_TIME=$(date +%s)
 
 echo ""
 log_info "Requested versions:"
@@ -31,21 +58,33 @@ GH_RESOLVED=""
 
 # Install Terraform
 log_header "Installing Terraform"
+TF_START=$(date +%s)
 output=$(/scripts/install-terraform.sh "$TERRAFORM_VERSION" "$ARCH")
 echo "$output"
 TF_RESOLVED=$(echo "$output" | grep "TERRAFORM_VERSION_RESOLVED=" | cut -d'=' -f2)
+TF_END=$(date +%s)
+TF_DURATION=$((TF_END - TF_START))
+log_info "Terraform installation took ${TF_DURATION}s"
 
 # Install Azure CLI
 log_header "Installing Azure CLI"
+AZ_START=$(date +%s)
 output=$(/scripts/install-azure-cli.sh "$AZURE_CLI_VERSION")
 echo "$output"
 AZ_RESOLVED=$(echo "$output" | grep "AZURE_CLI_VERSION_RESOLVED=" | cut -d'=' -f2)
+AZ_END=$(date +%s)
+AZ_DURATION=$((AZ_END - AZ_START))
+log_info "Azure CLI installation took ${AZ_DURATION}s"
 
 # Install GitHub CLI
 log_header "Installing GitHub CLI"
+GH_START=$(date +%s)
 output=$(/scripts/install-gh-cli.sh "$GH_CLI_VERSION" "$ARCH")
 echo "$output"
 GH_RESOLVED=$(echo "$output" | grep "GH_CLI_VERSION_RESOLVED=" | cut -d'=' -f2)
+GH_END=$(date +%s)
+GH_DURATION=$((GH_END - GH_START))
+log_info "GitHub CLI installation took ${GH_DURATION}s"
 
 echo ""
 log_header "Installation Complete"
@@ -87,6 +126,13 @@ if [[ -n "${GITHUB_PATH:-}" ]]; then
 fi
 
 log_header "Setup Complete - Tools are ready!"
+
+# Calculate and display performance metrics
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+echo ""
+log_info "⏱️  Setup completed in ${DURATION} seconds"
+echo ""
 
 # If additional command arguments are provided, execute them
 if [[ $# -gt 0 ]]; then

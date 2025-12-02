@@ -1,0 +1,28 @@
+# Basic Usage Example
+# This example shows the simplest way to use tf-avm-action with latest versions
+
+name: Basic Usage
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  setup-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform + Azure CLI + GitHub CLI
+        uses: Action-Foundry/tf-avm-action@v1
+        # Uses latest versions by default
+        
+      - name: Verify Terraform installation
+        run: terraform --version
+      
+      - name: Verify Azure CLI installation
+        run: az --version
+      
+      - name: Verify GitHub CLI installation
+        run: gh --version
