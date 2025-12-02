@@ -1,0 +1,36 @@
+#!/bin/bash
+# run-all-tests.sh - Run all test suites
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+echo "========================================="
+echo "Running All Test Suites"
+echo "========================================="
+echo ""
+
+# Track overall status
+OVERALL_STATUS=0
+
+# Run unit tests
+echo "Running unit tests..."
+if bash "${SCRIPT_DIR}/test-common.sh"; then
+    echo "✓ Unit tests passed"
+else
+    echo "✗ Unit tests failed"
+    OVERALL_STATUS=1
+fi
+
+echo ""
+echo "========================================="
+echo "All Tests Complete"
+echo "========================================="
+
+if [[ $OVERALL_STATUS -eq 0 ]]; then
+    echo "✓ All test suites passed!"
+    exit 0
+else
+    echo "✗ Some test suites failed"
+    exit 1
+fi

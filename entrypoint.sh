@@ -39,6 +39,9 @@ ARCH=$(detect_arch)
 
 log_header "tf-avm-action: Setting up tools"
 
+# Start timing
+START_TIME=$(date +%s)
+
 echo ""
 log_info "Requested versions:"
 log_info "  Terraform:  ${TERRAFORM_VERSION}"
@@ -110,6 +113,13 @@ if [[ -n "${GITHUB_PATH:-}" ]]; then
 fi
 
 log_header "Setup Complete - Tools are ready!"
+
+# Calculate and display performance metrics
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+echo ""
+log_info "⏱️  Setup completed in ${DURATION} seconds"
+echo ""
 
 # If additional command arguments are provided, execute them
 if [[ $# -gt 0 ]]; then

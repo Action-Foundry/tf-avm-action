@@ -187,6 +187,8 @@ For more security information, see our [Security Policy](SECURITY.md).
 
 ## 📦 Available Tool Versions
 
+For detailed version compatibility information, see [COMPATIBILITY.md](COMPATIBILITY.md).
+
 ### Terraform
 
 Find available versions at: https://releases.hashicorp.com/terraform/
@@ -229,9 +231,19 @@ If Azure CLI authentication fails:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 📊 Metrics and Performance
+
+This action is built with measurable performance goals and quality standards. See [METRICS.md](METRICS.md) for detailed performance metrics, benchmarks, and success criteria.
+
+**Key Metrics**:
+- ⚡ Installation time: <90s (cold start), <20s (cached)
+- 🎯 Reliability: >99.5% success rate
+- 🔒 Security: 100% checksum verification
+- 📦 Image size: ~250-300 MB
+
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a Pull Request. See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)

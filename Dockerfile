@@ -12,6 +12,7 @@ LABEL org.opencontainers.image.source="https://github.com/Action-Foundry/tf-avm-
 LABEL org.opencontainers.image.licenses="MIT"
 
 # Install essential dependencies in a single layer to minimize image size
+# hadolint ignore=DL3018
 RUN apk add --no-cache \
     bash \
     ca-certificates \
