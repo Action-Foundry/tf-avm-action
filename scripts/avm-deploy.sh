@@ -65,8 +65,9 @@ IFS=',' read -ra RESOURCE_TYPES <<< "$AVM_RESOURCE_TYPES"
 # Track deployed environments for output
 DEPLOYED_ENVIRONMENTS=()
 
-# Function to generate Terraform configuration for a resource type
-# This function now supports all 102 AVM modules using a data-driven approach
+# Function to copy or generate Terraform configuration for a resource type
+# This function now uses self-contained modules from avm/ directory when available,
+# or generates configuration using the generic template for other modules
 generate_terraform_config() {
     local resource_type="$1"
     local config_file="$2"
@@ -80,7 +81,64 @@ generate_terraform_config() {
         return 1
     fi
     
-    # For modules with special handling requirements, use custom templates
+    # Determine the base directory (one level up from scripts/)
+    local base_dir
+    base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    
+    # Normalize resource type for directory lookup
+    local module_dir_name="$resource_type"
+    
+    # Handle aliases (e.g., vnets, resource_groups, storage_accounts)
+    case "$resource_type" in
+        resources_resourcegroup)
+            module_dir_name="resource_groups"
+            ;;
+        network_virtualnetwork)
+            module_dir_name="vnets"
+            ;;
+        storage_storageaccount)
+            module_dir_name="storage_accounts"
+            ;;
+    esac
+    
+    # Check if we have a dedicated module directory for this resource type
+    local module_path="${base_dir}/avm/${module_dir_name}"
+    
+    if [[ -d "$module_path" && -f "${module_path}/main.tf" ]]; then
+        log_info "Using self-contained module from: avm/${module_dir_name}/"
+        
+        # Verify all required module files exist and are readable
+        local required_files=("variables.tf" "main.tf" "outputs.tf")
+        for file in "${required_files[@]}"; do
+            if [[ ! -r "${module_path}/${file}" ]]; then
+                log_error "Required module file not readable: ${module_path}/${file}"
+                return 1
+            fi
+        done
+        
+        # Concatenate all module files into a single .tf file
+        # Add newlines between files to prevent syntax errors
+        {
+            cat "${module_path}/variables.tf"
+            echo ""
+            echo ""
+            cat "${module_path}/main.tf"
+            echo ""
+            echo ""
+            cat "${module_path}/outputs.tf"
+            echo ""
+        } > "$config_file" || {
+            log_error "Failed to concatenate module files for: $resource_type"
+            return 1
+        }
+        
+        return 0
+    fi
+    
+    # Fall back to inline generation for modules without dedicated directories
+    log_info "Generating configuration dynamically for: $resource_type"
+    
+    # For modules with special handling requirements, use custom inline templates
     # Otherwise, use the generic template generator
     case "$resource_type" in
         resource_groups|resources_resourcegroup)

@@ -6,6 +6,7 @@ This document provides comprehensive guidance on using Azure Verified Modules (A
 
 - [Overview](#overview)
 - [What are Azure Verified Modules?](#what-are-azure-verified-modules)
+- [Module Architecture](#module-architecture)
 - [Quick Start](#quick-start)
 - [Directory Structure](#directory-structure)
 - [Supported Resource Types](#supported-resource-types)
@@ -35,6 +36,51 @@ Azure Verified Modules (AVM) are officially supported Terraform modules maintain
 - ✅ **Actively Maintained**: Regular updates and improvements
 
 Learn more: [https://azure.github.io/Azure-Verified-Modules/](https://azure.github.io/Azure-Verified-Modules/)
+
+## Module Architecture
+
+### Modular Structure (NEW! 🎉)
+
+This action now features a **modular architecture** where each AVM module type is organized as a self-contained directory under `avm/` at the repository root:
+
+```
+avm/
+├── README.md                    # Module directory documentation
+├── _template/                   # Template for creating new modules
+├── resource_groups/             # Self-contained resource groups module
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   └── README.md
+├── vnets/                       # Self-contained virtual networks module
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   └── README.md
+└── storage_accounts/            # Self-contained storage accounts module
+    ├── main.tf
+    ├── variables.tf
+    ├── outputs.tf
+    └── README.md
+```
+
+### Benefits of Modular Architecture
+
+- **✅ Self-Contained**: Each module contains all necessary Terraform configuration
+- **✅ Independent**: Modules can be used standalone or via the action
+- **✅ Reusable**: Easy to copy and customize for specific needs
+- **✅ Maintainable**: Clear separation of concerns per resource type
+- **✅ Extensible**: Simple template for adding new modules
+
+### Module Independence
+
+Each module in `avm/` is fully independent and can be:
+
+1. **Used directly in Terraform**: Reference the module path in your Terraform code
+2. **Copied to your repository**: Customize and maintain your own version
+3. **Used via the action**: The action automatically uses these modules during deployment
+
+For detailed information about the modular architecture, see [avm/README.md](avm/README.md).
 
 ## Quick Start
 
@@ -150,38 +196,64 @@ jobs:
 
 ## Directory Structure
 
-The recommended directory structure follows Azure CAF best practices:
+### Your Repository Structure
+
+The recommended directory structure for your repository follows Azure CAF best practices:
 
 ```
-repository/
+your-repository/
 ├── .github/
 │   └── workflows/
 │       └── deploy-avm.yml          # Deployment workflow
-├── terraform/                       # Terraform working directory
-│   ├── dev/                        # Development environment
-│   │   ├── resource_groups.tfvars  # Resource group definitions
-│   │   ├── vnets.tfvars           # Virtual network definitions
-│   │   └── storage_accounts.tfvars # Storage account definitions
-│   ├── test/                       # Test environment
-│   │   ├── resource_groups.tfvars
-│   │   └── vnets.tfvars
-│   ├── uat/                        # UAT environment
-│   │   └── resource_groups.tfvars
-│   ├── staging/                    # Staging environment
-│   │   └── resource_groups.tfvars
-│   └── prod/                       # Production environment
-│       ├── resource_groups.tfvars
-│       ├── vnets.tfvars
-│       └── storage_accounts.tfvars
-└── README.md
+└── terraform/                       # Terraform working directory
+    ├── dev/                        # Development environment
+    │   ├── resource_groups.tfvars  # Resource group definitions
+    │   ├── vnets.tfvars           # Virtual network definitions
+    │   └── storage_accounts.tfvars # Storage account definitions
+    ├── test/                       # Test environment
+    │   ├── resource_groups.tfvars
+    │   └── vnets.tfvars
+    ├── uat/                        # UAT environment
+    │   └── resource_groups.tfvars
+    ├── staging/                    # Staging environment
+    │   └── resource_groups.tfvars
+    └── prod/                       # Production environment
+        ├── resource_groups.tfvars
+        ├── vnets.tfvars
+        └── storage_accounts.tfvars
 ```
+
+### Action's Internal Structure (Reference)
+
+The action uses a modular structure internally to organize AVM modules:
+
+```
+tf-avm-action/
+├── avm/                            # Modular AVM configurations
+│   ├── README.md                   # Module directory documentation
+│   ├── _template/                  # Template for new modules
+│   ├── resource_groups/            # Self-contained module
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   └── README.md
+│   ├── vnets/                      # Self-contained module
+│   └── storage_accounts/           # Self-contained module
+└── scripts/
+    └── avm-deploy.sh               # Deployment orchestrator
+```
+
+The action automatically uses modules from `avm/` when deploying. For modules without dedicated directories, it generates configuration dynamically using the template generator.
 
 ### Key Points:
 
+- **Your repository**: Only needs `.tfvars` files organized by environment
+- **Action's modules**: Self-contained and ready-to-use (or generate dynamically)
 - Each environment has its own folder under `terraform/`
 - Environment folders contain `.tfvars` files for each resource type
 - Standard environment names: `dev`, `test`, `uat`, `staging`, `prod`
 - Only deploy resource types that have corresponding `.tfvars` files
+- No need to copy modules to your repository (unless you want to customize them)
 
 ## Supported Resource Types
 
@@ -654,15 +726,68 @@ The module versions are defined in the generated Terraform configuration and fol
 - `~> 0.1`: Allows patch and minor updates (0.1.x)
 - `~> 1.0`: Allows patch and minor updates (1.x.x)
 
-### Extending to New Resource Types
+### Extending with Additional AVM Modules
 
-To add support for additional AVM modules, you'll need to:
+The action supports all 102 AVM modules! To use any module:
 
-1. Add the resource type to `avm_resource_types` input
-2. Create corresponding tfvars files in your environment directories
-3. The action currently supports: `resource_groups`, `vnets`, `storage_accounts`
+**Method 1: Use Existing Modules (Recommended)**
 
-For other resource types, use the standard Terraform workflow mode instead of AVM mode.
+For the three pre-configured modules with dedicated directories:
+1. Add the resource type to `avm_resource_types` input: `resource_groups`, `vnets`, or `storage_accounts`
+2. Create corresponding `.tfvars` files in your environment directories
+
+**Method 2: Use Dynamic Generation**
+
+For the other 99 AVM modules:
+1. Add any supported resource type to `avm_resource_types` (see [Supported Resource Types](#supported-resource-types))
+2. Create corresponding `.tfvars` files with the resource configuration
+3. The action will dynamically generate the Terraform configuration
+
+**Method 3: Add Dedicated Module Directory**
+
+To create a self-contained module like the three existing ones:
+
+1. Copy the template: `cp -r avm/_template/ avm/<module_name>/`
+2. Customize the files by replacing placeholders (see [avm/README.md](avm/README.md))
+3. Test the module independently
+4. Submit a PR to add it to the action
+
+For detailed instructions on adding new module directories, see [avm/README.md - Adding New Modules](avm/README.md#adding-new-modules).
+
+### Using Modules Independently
+
+You can use any module from `avm/` directly in your Terraform code:
+
+```hcl
+# Reference a module directly
+module "my_resource_groups" {
+  source = "github.com/Action-Foundry/tf-avm-action//avm/resource_groups?ref=v1"
+  
+  environment      = "dev"
+  default_location = "eastus"
+  
+  resource_groups = {
+    rg1 = {
+      name     = "rg-myapp-dev-eastus-001"
+      location = "eastus"
+      tags     = { cost_center = "engineering" }
+    }
+  }
+}
+```
+
+Or clone the action repository and use modules locally:
+
+```bash
+git clone https://github.com/Action-Foundry/tf-avm-action.git
+cd your-terraform-project
+
+# Reference locally
+module "resource_groups" {
+  source = "../tf-avm-action/avm/resource_groups"
+  # ... configuration
+}
+```
 
 ### Combining with Standard Terraform
 
