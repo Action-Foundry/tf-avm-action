@@ -16,32 +16,43 @@ log_header "GitHub CLI Authentication"
 # 1. Personal Access Token (if gh_token provided)
 # 2. Workflow default token (GITHUB_TOKEN)
 
+# Function to authenticate with token
+authenticate_github() {
+    local token_source="$1"
+    local token="$2"
+    
+    log_info "Authenticating with ${token_source}..."
+    
+    # Pass token securely via stdin
+    if ! echo "$token" | gh auth login --with-token 2>/dev/null; then
+        log_error "Failed to authenticate with ${token_source}"
+        log_error "Verify the token is valid and has required permissions"
+        return 1
+    fi
+    
+    # Verify authentication was successful
+    if ! gh auth status &>/dev/null; then
+        log_error "Authentication appeared to succeed but gh auth status failed"
+        return 1
+    fi
+    
+    log_info "Successfully authenticated with ${token_source}"
+    return 0
+}
+
 if [[ -n "$GH_TOKEN" ]]; then
-    log_info "Authenticating with provided GitHub token"
-    echo "$GH_TOKEN" | gh auth login --with-token
-    
-    if gh auth status &>/dev/null; then
-        log_info "Successfully authenticated with provided token"
-    else
-        log_error "Failed to authenticate with provided token"
+    if ! authenticate_github "provided GitHub token" "$GH_TOKEN"; then
         exit 1
     fi
-    
 elif [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    log_info "Authenticating with workflow default token (GITHUB_TOKEN)"
-    echo "$GITHUB_TOKEN" | gh auth login --with-token
-    
-    if gh auth status &>/dev/null; then
-        log_info "Successfully authenticated with workflow token"
-    else
-        log_error "Failed to authenticate with workflow token"
+    if ! authenticate_github "workflow default token (GITHUB_TOKEN)" "$GITHUB_TOKEN"; then
         exit 1
     fi
-    
 else
     log_warn "No GitHub authentication credentials provided"
     log_warn "GitHub CLI will not be authenticated"
     log_info "This is OK if you don't need to interact with GitHub API"
+    log_info "To authenticate, provide gh_token input or ensure GITHUB_TOKEN is available"
 fi
 
 # Verify authentication status

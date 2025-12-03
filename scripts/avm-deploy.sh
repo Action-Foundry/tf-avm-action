@@ -72,18 +72,28 @@ generate_terraform_config() {
     local resource_type="$1"
     local config_file="$2"
     
+    # Validate inputs
+    if [[ -z "$resource_type" ]] || [[ -z "$config_file" ]]; then
+        log_error "generate_terraform_config: resource_type and config_file are required"
+        return 1
+    fi
+    
     log_info "Generating Terraform configuration for: $resource_type"
     
     # Check if this module is supported in the registry
     if ! get_avm_module_source "$resource_type" > /dev/null 2>&1; then
         log_error "Unsupported resource type: $resource_type"
         log_error "Please check the AVM modules registry or update to use a supported module name"
+        log_error "Run 'get_avm_module_source' to see supported modules"
         return 1
     fi
     
     # Determine the base directory (one level up from scripts/)
     local base_dir
-    base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    if ! base_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; then
+        log_error "Failed to determine base directory"
+        return 1
+    fi
     
     # Normalize resource type for directory lookup
     local module_dir_name="$resource_type"
@@ -104,33 +114,39 @@ generate_terraform_config() {
     # Check if we have a dedicated module directory for this resource type
     local module_path="${base_dir}/avm/${module_dir_name}"
     
-    if [[ -d "$module_path" && -f "${module_path}/main.tf" ]]; then
+    if [[ -d "$module_path" ]] && [[ -f "${module_path}/main.tf" ]]; then
         log_info "Using self-contained module from: avm/${module_dir_name}/"
         
         # Verify all required module files exist and are readable
         local required_files=("variables.tf" "main.tf" "outputs.tf")
         for file in "${required_files[@]}"; do
-            if [[ ! -r "${module_path}/${file}" ]]; then
-                log_error "Required module file not readable: ${module_path}/${file}"
+            local file_path="${module_path}/${file}"
+            if [[ ! -f "$file_path" ]]; then
+                log_error "Required module file not found: $file_path"
+                return 1
+            fi
+            if [[ ! -r "$file_path" ]]; then
+                log_error "Required module file not readable: $file_path"
                 return 1
             fi
         done
         
         # Concatenate all module files into a single .tf file
         # Add newlines between files to prevent syntax errors
-        {
-            cat "${module_path}/variables.tf"
-            echo ""
-            echo ""
-            cat "${module_path}/main.tf"
-            echo ""
-            echo ""
-            cat "${module_path}/outputs.tf"
-            echo ""
-        } > "$config_file" || {
+        if ! {
+            cat "${module_path}/variables.tf" && echo "" && echo "" && \
+            cat "${module_path}/main.tf" && echo "" && echo "" && \
+            cat "${module_path}/outputs.tf" && echo ""
+        } > "$config_file"; then
             log_error "Failed to concatenate module files for: $resource_type"
             return 1
-        }
+        fi
+        
+        # Verify the output file was created successfully
+        if [[ ! -s "$config_file" ]]; then
+            log_error "Generated config file is empty: $config_file"
+            return 1
+        fi
         
         return 0
     fi
@@ -360,19 +376,37 @@ EOF
 deploy_environment() {
     local env="$1"
     
+    # Validate input
+    if [[ -z "$env" ]]; then
+        log_error "deploy_environment: environment name is required"
+        return 1
+    fi
+    
     log_header "Deploying Environment: $env"
     
-    # Check if environment directory exists
+    # Check if environment directory exists and is readable
     if [[ ! -d "$env" ]]; then
         log_error "Environment directory not found: $TERRAFORM_WORKING_DIR/$env"
         log_error "Please create the directory and add tfvars files for your resources"
         return 1
     fi
     
+    if [[ ! -r "$env" ]]; then
+        log_error "Environment directory not readable: $TERRAFORM_WORKING_DIR/$env"
+        return 1
+    fi
+    
     # Create a deployment directory for this environment
     local deploy_dir="avm-deploy-${env}"
-    mkdir -p "$deploy_dir"
-    cd "$deploy_dir" || return 1
+    if ! mkdir -p "$deploy_dir"; then
+        log_error "Failed to create deployment directory: $deploy_dir"
+        return 1
+    fi
+    
+    if ! cd "$deploy_dir"; then
+        log_error "Failed to change to deployment directory: $deploy_dir"
+        return 1
+    fi
     
     log_info "Deployment directory: $(pwd)"
     

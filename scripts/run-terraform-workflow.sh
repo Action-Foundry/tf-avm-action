@@ -96,20 +96,40 @@ fi
 if [[ ! "$TERRAFORM_COMMAND" =~ ^(full|plan|destroy)$ ]]; then
     log_error "Invalid terraform_command: $TERRAFORM_COMMAND"
     log_error "Valid options: full, plan, destroy, none"
+    log_error "Received: $TERRAFORM_COMMAND"
     exit 1
 fi
 
 log_header "Terraform Workflow: $TERRAFORM_COMMAND"
 
-# Change to working directory
-ORIGINAL_DIR=$(pwd)
+# Validate working directory
 if [[ ! -d "$TERRAFORM_WORKING_DIR" ]]; then
     log_error "Terraform working directory does not exist: $TERRAFORM_WORKING_DIR"
+    log_error "Please ensure the directory exists before running this workflow"
     exit 1
 fi
 
-cd "$TERRAFORM_WORKING_DIR" || exit 1
+if [[ ! -r "$TERRAFORM_WORKING_DIR" ]]; then
+    log_error "Terraform working directory is not readable: $TERRAFORM_WORKING_DIR"
+    exit 1
+fi
+
+# Store original directory for cleanup
+ORIGINAL_DIR=$(pwd)
+
+# Change to working directory
+if ! cd "$TERRAFORM_WORKING_DIR"; then
+    log_error "Failed to change to working directory: $TERRAFORM_WORKING_DIR"
+    exit 1
+fi
+
 log_info "Working directory: $(pwd)"
+
+# Verify we have Terraform files
+if ! ls *.tf &>/dev/null && ! ls *.tf.json &>/dev/null; then
+    log_warn "No Terraform configuration files (*.tf or *.tf.json) found in working directory"
+    log_warn "This may cause Terraform to fail"
+fi
 
 # Build backend config arguments
 BACKEND_CONFIG_ARGS=""
@@ -127,10 +147,17 @@ fi
 VAR_FILE_ARGS=""
 if [[ -n "$TERRAFORM_VAR_FILE" ]]; then
     if [[ -f "$TERRAFORM_VAR_FILE" ]]; then
-        VAR_FILE_ARGS="-var-file=$TERRAFORM_VAR_FILE"
-        log_info "Using variables file: $TERRAFORM_VAR_FILE"
+        if [[ -r "$TERRAFORM_VAR_FILE" ]]; then
+            VAR_FILE_ARGS="-var-file=$TERRAFORM_VAR_FILE"
+            log_info "Using variables file: $TERRAFORM_VAR_FILE"
+        else
+            log_error "Variables file is not readable: $TERRAFORM_VAR_FILE"
+            exit 1
+        fi
     else
-        log_warn "Variables file not found: $TERRAFORM_VAR_FILE"
+        log_error "Variables file not found: $TERRAFORM_VAR_FILE"
+        log_error "Please ensure the file exists or remove the terraform_var_file input"
+        exit 1
     fi
 fi
 

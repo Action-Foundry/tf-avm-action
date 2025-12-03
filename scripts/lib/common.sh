@@ -1,6 +1,16 @@
 #!/bin/bash
 # common.sh - Shared utility functions for tf-avm-action scripts
 # This library provides common logging and utility functions used across all installation scripts
+#
+# Features:
+#   - Colored logging functions (info, warn, error, debug)
+#   - Architecture detection (amd64/arm64)
+#   - Secure file downloading with retry logic
+#   - Checksum verification for security
+#   - Temporary directory management
+#
+# Usage:
+#   source "$(dirname "$0")/lib/common.sh"
 
 # Prevent multiple inclusions
 if [[ -n "${_COMMON_SH_LOADED:-}" ]]; then
@@ -9,6 +19,7 @@ fi
 readonly _COMMON_SH_LOADED=1
 
 # Exit on error, undefined variables, and pipe failures
+# This ensures scripts fail fast on errors rather than continuing with invalid state
 set -euo pipefail
 
 # Colors for output (only if terminal supports colors)
@@ -53,6 +64,7 @@ log_header() {
 
 # Detect system architecture
 # Returns: amd64 or arm64
+# Note: This function exits the script on unsupported architecture
 detect_arch() {
     local arch
     arch=$(uname -m)
@@ -65,6 +77,7 @@ detect_arch() {
             ;;
         *)
             log_error "Unsupported architecture: $arch"
+            log_error "Supported architectures: x86_64 (amd64), aarch64/arm64 (arm64)"
             exit 1
             ;;
     esac
@@ -72,11 +85,23 @@ detect_arch() {
 
 # Create a temporary directory
 # Returns: Path to the temporary directory
-# Note: Caller is responsible for cleanup
+# Note: Caller is responsible for cleanup (or use trap for automatic cleanup)
 create_temp_dir() {
     local temp_dir
-    temp_dir=$(mktemp -d)
     
+    # Create temp directory with error handling
+    if ! temp_dir=$(mktemp -d 2>/dev/null); then
+        log_error "Failed to create temporary directory"
+        return 1
+    fi
+    
+    # Verify the directory was created and is writable
+    if [[ ! -d "$temp_dir" ]] || [[ ! -w "$temp_dir" ]]; then
+        log_error "Temporary directory is not accessible: $temp_dir"
+        return 1
+    fi
+    
+    log_debug "Created temporary directory: $temp_dir"
     echo "$temp_dir"
 }
 
@@ -94,21 +119,44 @@ download_file() {
     local retries="${4:-3}"
     local attempt=1
     
+    # Validate inputs
+    if [[ -z "$url" ]] || [[ -z "$output" ]]; then
+        log_error "download_file: URL and output path are required"
+        return 1
+    fi
+    
+    # Validate timeout and retries are positive integers
+    if ! [[ "$timeout" =~ ^[0-9]+$ ]] || [[ "$timeout" -lt 1 ]]; then
+        log_error "download_file: Invalid timeout value: $timeout"
+        return 1
+    fi
+    
+    if ! [[ "$retries" =~ ^[0-9]+$ ]] || [[ "$retries" -lt 1 ]]; then
+        log_error "download_file: Invalid retries value: $retries"
+        return 1
+    fi
+    
     while [[ $attempt -le $retries ]]; do
         log_debug "Download attempt $attempt of $retries: $url"
         if curl -sSfL --max-time "$timeout" -o "$output" "$url" 2>/dev/null; then
             log_debug "Download successful: $output"
-            return 0
+            # Verify the file was actually created and is not empty
+            if [[ -f "$output" ]] && [[ -s "$output" ]]; then
+                return 0
+            else
+                log_warn "Downloaded file is empty or missing: $output"
+            fi
         fi
         
         if [[ $attempt -lt $retries ]]; then
-            log_warn "Download attempt $attempt failed, retrying..."
-            sleep $((attempt * 2))  # Exponential backoff
+            local backoff=$((attempt * 2))
+            log_warn "Download attempt $attempt failed, retrying in ${backoff}s..."
+            sleep "$backoff"  # Exponential backoff
         fi
         ((attempt++))
     done
     
-    log_error "Failed to download: $url"
+    log_error "Failed to download after $retries attempts: $url"
     return 1
 }
 
@@ -121,13 +169,36 @@ verify_checksum() {
     local file="$1"
     local expected="$2"
     
+    # Validate inputs
+    if [[ -z "$file" ]] || [[ -z "$expected" ]]; then
+        log_error "verify_checksum: File path and expected checksum are required"
+        return 1
+    fi
+    
+    # Check if file exists and is readable
+    if [[ ! -f "$file" ]] || [[ ! -r "$file" ]]; then
+        log_error "verify_checksum: File not found or not readable: $file"
+        return 1
+    fi
+    
+    # Validate expected checksum format (SHA256 is 64 hex characters)
+    if ! [[ "$expected" =~ ^[a-fA-F0-9]{64}$ ]]; then
+        log_error "verify_checksum: Invalid SHA256 checksum format: $expected"
+        return 1
+    fi
+    
     local actual
     actual=$(sha256sum "$file" | awk '{print $1}')
+    
+    # Normalize comparison (convert to lowercase)
+    expected=$(echo "$expected" | tr '[:upper:]' '[:lower:]')
+    actual=$(echo "$actual" | tr '[:upper:]' '[:lower:]')
     
     if [[ "$expected" != "$actual" ]]; then
         log_error "Checksum verification failed!"
         log_error "Expected: $expected"
         log_error "Actual:   $actual"
+        log_error "This may indicate a corrupted download or security issue"
         return 1
     fi
     
