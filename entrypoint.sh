@@ -45,6 +45,11 @@ validate_input() {
     local input="$1"
     local name="$2"
     
+    # Skip validation for 'latest' keyword
+    if [[ "$input" == "latest" ]]; then
+        return 0
+    fi
+    
     # Check for potentially malicious characters
     # Allow alphanumeric, dots, hyphens, underscores, and plus signs (for build metadata)
     if [[ "$input" =~ [^a-zA-Z0-9._+-] ]]; then
@@ -56,6 +61,12 @@ validate_input() {
     # Check for excessively long version strings
     if [[ ${#input} -gt 50 ]]; then
         log_error "${name} is too long (max 50 characters): ${input}"
+        exit 1
+    fi
+    
+    # Check for path traversal attempts
+    if [[ "$input" == *".."* ]] || [[ "$input" == *"/"* ]]; then
+        log_error "Path traversal or invalid characters detected in ${name}: ${input}"
         exit 1
     fi
 }
@@ -179,15 +190,31 @@ fi
 if [[ "$TERRAFORM_WORKING_DIR" != /* ]]; then
     if [[ -z "${GITHUB_WORKSPACE:-}" ]]; then
         log_error "GITHUB_WORKSPACE environment variable is not set"
+        log_error "This usually means the action is not running in a GitHub Actions environment"
         exit 1
     fi
     TERRAFORM_WORKING_DIR="${GITHUB_WORKSPACE}/${TERRAFORM_WORKING_DIR}"
 fi
 
-# Validate the resolved path exists
+# Normalize path (remove trailing slashes and resolve ..)
+TERRAFORM_WORKING_DIR=$(cd "$TERRAFORM_WORKING_DIR" 2>/dev/null && pwd || echo "$TERRAFORM_WORKING_DIR")
+
+# Validate the resolved path exists and is a directory
 if [[ ! -d "$TERRAFORM_WORKING_DIR" ]]; then
     log_error "Terraform working directory does not exist: $TERRAFORM_WORKING_DIR"
+    log_error "Please ensure the directory exists before running this action"
     exit 1
+fi
+
+# Security check: Ensure working directory is within workspace
+if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
+    # Check if TERRAFORM_WORKING_DIR starts with GITHUB_WORKSPACE
+    if [[ "$TERRAFORM_WORKING_DIR" != "$GITHUB_WORKSPACE"* ]]; then
+        log_error "Security: Terraform working directory is outside workspace"
+        log_error "Working directory: $TERRAFORM_WORKING_DIR"
+        log_error "Workspace: $GITHUB_WORKSPACE"
+        exit 1
+    fi
 fi
 
 # Run AVM Deployment (takes priority over standard Terraform workflow)

@@ -21,13 +21,19 @@ resolve_version() {
         log_info "Resolving latest Terraform version..."
         # Fetch latest version from HashiCorp releases API
         local latest
-        latest=$(curl -sSf --max-time 30 "https://api.releases.hashicorp.com/v1/releases/terraform/latest" | jq -r '.version')
-        
-        if [[ -z "$latest" || "$latest" == "null" ]]; then
-            log_error "Failed to resolve latest Terraform version"
+        if ! latest=$(curl -sSf --max-time 30 "https://api.releases.hashicorp.com/v1/releases/terraform/latest" 2>/dev/null | jq -r '.version' 2>/dev/null); then
+            log_error "Failed to fetch latest Terraform version from HashiCorp API"
+            log_error "Please check your network connection or try specifying a version explicitly"
             exit 1
         fi
         
+        if [[ -z "$latest" ]] || [[ "$latest" == "null" ]] || [[ "$latest" == "null"* ]]; then
+            log_error "Failed to resolve latest Terraform version (received invalid response)"
+            log_error "This may be due to API changes or network issues"
+            exit 1
+        fi
+        
+        log_info "Resolved latest version: $latest"
         echo "$latest"
     else
         # Remove 'v' prefix if present
@@ -53,7 +59,11 @@ install_terraform() {
     local download_url="https://releases.hashicorp.com/terraform/${version}/terraform_${version}_linux_${arch}.zip"
     local checksum_url="https://releases.hashicorp.com/terraform/${version}/terraform_${version}_SHA256SUMS"
     local temp_dir
-    temp_dir=$(create_temp_dir)
+    
+    if ! temp_dir=$(create_temp_dir); then
+        log_error "Failed to create temporary directory for Terraform installation"
+        exit 1
+    fi
     
     # Set up cleanup trap for the temporary directory
     # shellcheck disable=SC2064
@@ -61,32 +71,67 @@ install_terraform() {
     
     log_info "Downloading Terraform v${version} for linux/${arch}..."
     
-    cd "$temp_dir" || exit 1
+    if ! cd "$temp_dir"; then
+        log_error "Failed to change to temporary directory: $temp_dir"
+        exit 1
+    fi
     
     # Download the zip and checksums
     if ! download_file "$download_url" "terraform.zip" 300; then
+        log_error "Failed to download Terraform v${version}"
         log_error "Version ${version} may not exist. Check available versions at:"
         log_error "https://releases.hashicorp.com/terraform/"
         exit 1
     fi
     
+    # Download and verify checksums (mandatory for security)
     if curl -sSfL --max-time 30 -o "SHA256SUMS" "$checksum_url" 2>/dev/null; then
         log_info "Verifying checksum..."
         # Extract the expected checksum for our file
         local expected_checksum
         expected_checksum=$(grep "terraform_${version}_linux_${arch}.zip" SHA256SUMS | awk '{print $1}')
-        verify_checksum "terraform.zip" "$expected_checksum"
+        
+        if [[ -z "$expected_checksum" ]]; then
+            log_error "Could not find checksum for terraform_${version}_linux_${arch}.zip in SHA256SUMS file"
+            exit 1
+        fi
+        
+        if ! verify_checksum "terraform.zip" "$expected_checksum"; then
+            log_error "Checksum verification failed - aborting installation for security"
+            exit 1
+        fi
     else
-        log_warn "Could not download checksums file, skipping verification"
+        log_error "Could not download checksums file from HashiCorp"
+        log_error "Aborting installation for security reasons"
+        exit 1
     fi
     
     log_info "Installing Terraform..."
-    unzip -q terraform.zip
-    mv terraform /usr/local/bin/
+    if ! unzip -q terraform.zip; then
+        log_error "Failed to extract Terraform archive"
+        exit 1
+    fi
+    
+    if [[ ! -f terraform ]]; then
+        log_error "Terraform binary not found in archive"
+        exit 1
+    fi
+    
+    if ! mv terraform /usr/local/bin/; then
+        log_error "Failed to move Terraform binary to /usr/local/bin/"
+        exit 1
+    fi
+    
     chmod +x /usr/local/bin/terraform
     
+    # Verify installation
+    if ! /usr/local/bin/terraform version &>/dev/null; then
+        log_error "Terraform installation verification failed"
+        exit 1
+    fi
+    
     # Cleanup is handled by trap set above
-    cd /
+    cd / || true
     
     log_info "Terraform v${version} installed successfully"
 }
