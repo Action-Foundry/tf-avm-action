@@ -107,14 +107,30 @@ generate_terraform_config() {
     if [[ -d "$module_path" && -f "${module_path}/main.tf" ]]; then
         log_info "Using self-contained module from: avm/${module_dir_name}/"
         
+        # Verify all required module files exist and are readable
+        local required_files=("variables.tf" "main.tf" "outputs.tf")
+        for file in "${required_files[@]}"; do
+            if [[ ! -r "${module_path}/${file}" ]]; then
+                log_error "Required module file not readable: ${module_path}/${file}"
+                return 1
+            fi
+        done
+        
         # Concatenate all module files into a single .tf file
+        # Add newlines between files to prevent syntax errors
         {
             cat "${module_path}/variables.tf"
             echo ""
+            echo ""
             cat "${module_path}/main.tf"
             echo ""
+            echo ""
             cat "${module_path}/outputs.tf"
-        } > "$config_file" || return 1
+            echo ""
+        } > "$config_file" || {
+            log_error "Failed to concatenate module files for: $resource_type"
+            return 1
+        }
         
         return 0
     fi
