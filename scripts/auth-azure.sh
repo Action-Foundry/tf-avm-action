@@ -24,14 +24,23 @@ if [[ -z "$AZURE_CLIENT_ID" ]] && [[ -z "$AZURE_SUBSCRIPTION_ID" ]] && [[ -z "$A
     exit 0
 fi
 
+# Validate boolean inputs
+if [[ "$AZURE_USE_OIDC" != "true" ]] && [[ "$AZURE_USE_OIDC" != "false" ]]; then
+    log_error "Invalid value for AZURE_USE_OIDC: ${AZURE_USE_OIDC}"
+    log_error "Must be either 'true' or 'false'"
+    exit 1
+fi
+
 # Validate required parameters based on auth method
 if [[ -z "$AZURE_CLIENT_ID" ]]; then
     log_error "AZURE_CLIENT_ID is required for Azure authentication"
+    log_error "Please provide the azure_client_id input parameter"
     exit 1
 fi
 
 if [[ -z "$AZURE_TENANT_ID" ]]; then
     log_error "AZURE_TENANT_ID is required for Azure authentication"
+    log_error "Please provide the azure_tenant_id input parameter"
     exit 1
 fi
 
@@ -39,6 +48,22 @@ if [[ "$AZURE_USE_OIDC" != "true" ]] && [[ -z "$AZURE_CLIENT_SECRET" ]]; then
     log_error "AZURE_CLIENT_SECRET is required for Service Principal authentication"
     log_error "Either provide azure_client_secret or set azure_use_oidc=true"
     exit 1
+fi
+
+# Validate UUID format for Azure IDs (basic validation)
+if ! [[ "$AZURE_CLIENT_ID" =~ ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ ]]; then
+    log_warn "AZURE_CLIENT_ID does not match expected UUID format"
+    log_warn "Proceeding anyway, but verify your client ID is correct"
+fi
+
+if ! [[ "$AZURE_TENANT_ID" =~ ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ ]]; then
+    log_warn "AZURE_TENANT_ID does not match expected UUID format"
+    log_warn "Proceeding anyway, but verify your tenant ID is correct"
+fi
+
+if [[ -n "$AZURE_SUBSCRIPTION_ID" ]] && ! [[ "$AZURE_SUBSCRIPTION_ID" =~ ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$ ]]; then
+    log_warn "AZURE_SUBSCRIPTION_ID does not match expected UUID format"
+    log_warn "Proceeding anyway, but verify your subscription ID is correct"
 fi
 
 # Set environment variables for Terraform Azure provider
@@ -82,30 +107,59 @@ else
     # Perform Azure login
     log_info "Logging in to Azure with Service Principal..."
     
+    # Use a more secure approach - avoid passing secrets via command line when possible
+    # However, az login requires the password via -p flag
+    LOGIN_EXIT_CODE=0
+    
     if [[ -n "$AZURE_SUBSCRIPTION_ID" ]]; then
-        az login --service-principal \
+        if ! az login --service-principal \
             -u "$AZURE_CLIENT_ID" \
             -p "$AZURE_CLIENT_SECRET" \
             --tenant "$AZURE_TENANT_ID" \
-            --output none
+            --output none 2>&1; then
+            LOGIN_EXIT_CODE=$?
+            log_error "Failed to authenticate to Azure with Service Principal"
+            log_error "Exit code: $LOGIN_EXIT_CODE"
+            # Don't log the full output as it might contain sensitive info
+            exit 1
+        fi
         
-        az account set --subscription "$AZURE_SUBSCRIPTION_ID" --output none
+        if ! az account set --subscription "$AZURE_SUBSCRIPTION_ID" --output none 2>&1; then
+            log_error "Failed to set Azure subscription to: $AZURE_SUBSCRIPTION_ID"
+            log_error "Verify the subscription ID is correct and accessible"
+            exit 1
+        fi
     else
-        az login --service-principal \
+        if ! az login --service-principal \
             -u "$AZURE_CLIENT_ID" \
             -p "$AZURE_CLIENT_SECRET" \
             --tenant "$AZURE_TENANT_ID" \
-            --output none
+            --output none 2>&1; then
+            LOGIN_EXIT_CODE=$?
+            log_error "Failed to authenticate to Azure with Service Principal"
+            log_error "Exit code: $LOGIN_EXIT_CODE"
+            # Don't log the full output as it might contain sensitive info
+            exit 1
+        fi
     fi
     
-    if az account show &>/dev/null; then
-        log_info "Successfully authenticated to Azure"
-        CURRENT_SUB=$(az account show --query id -o tsv 2>/dev/null)
+    # Verify authentication was successful
+    if ! az account show &>/dev/null; then
+        log_error "Failed to authenticate to Azure - account show failed"
+        log_error "Verify your service principal credentials are correct"
+        exit 1
+    fi
+    
+    log_info "Successfully authenticated to Azure"
+    
+    # Get and display subscription info
+    CURRENT_SUB=""
+    CURRENT_SUB_NAME=""
+    if CURRENT_SUB=$(az account show --query id -o tsv 2>/dev/null); then
         CURRENT_SUB_NAME=$(az account show --query name -o tsv 2>/dev/null)
         log_info "Current subscription: $CURRENT_SUB_NAME ($CURRENT_SUB)"
     else
-        log_error "Failed to authenticate to Azure"
-        exit 1
+        log_warn "Could not retrieve subscription information"
     fi
 fi
 
