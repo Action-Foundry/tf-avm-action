@@ -109,17 +109,14 @@ else
     
     # Use a more secure approach - avoid passing secrets via command line when possible
     # However, az login requires the password via -p flag
-    LOGIN_EXIT_CODE=0
-    
     if [[ -n "$AZURE_SUBSCRIPTION_ID" ]]; then
         if ! az login --service-principal \
             -u "$AZURE_CLIENT_ID" \
             -p "$AZURE_CLIENT_SECRET" \
             --tenant "$AZURE_TENANT_ID" \
             --output none 2>&1; then
-            LOGIN_EXIT_CODE=$?
             log_error "Failed to authenticate to Azure with Service Principal"
-            log_error "Exit code: $LOGIN_EXIT_CODE"
+            log_error "Exit code: $?"
             # Don't log the full output as it might contain sensitive info
             exit 1
         fi
@@ -135,9 +132,8 @@ else
             -p "$AZURE_CLIENT_SECRET" \
             --tenant "$AZURE_TENANT_ID" \
             --output none 2>&1; then
-            LOGIN_EXIT_CODE=$?
             log_error "Failed to authenticate to Azure with Service Principal"
-            log_error "Exit code: $LOGIN_EXIT_CODE"
+            log_error "Exit code: $?"
             # Don't log the full output as it might contain sensitive info
             exit 1
         fi

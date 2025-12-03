@@ -27,7 +27,7 @@ resolve_version() {
             exit 1
         fi
         
-        if [[ -z "$latest" ]] || [[ "$latest" == "null" ]] || [[ "$latest" == "null"* ]]; then
+        if [[ -z "$latest" ]] || [[ "$latest" == "null" ]]; then
             log_error "Failed to resolve latest Terraform version (received invalid response)"
             log_error "This may be due to API changes or network issues"
             exit 1

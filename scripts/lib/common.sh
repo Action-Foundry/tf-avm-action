@@ -68,7 +68,6 @@ log_header() {
 detect_arch() {
     local arch
     arch=$(uname -m)
-    
     case "$arch" in
         x86_64)
             echo "amd64"
