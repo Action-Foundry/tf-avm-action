@@ -46,7 +46,7 @@ The codebase demonstrates exceptional quality and requires no refactoring. All c
 - Appropriate use of shellcheck directives
 
 **Metrics**:
-- Total lines of code: 2,003 (scripts only)
+- Total lines of code: 2,224 (scripts + entrypoint)
 - Code duplication: <3%
 - Linting errors: 0
 - Test pass rate: 100% (58/58 tests)
