@@ -1,6 +1,16 @@
 #!/bin/bash
 # common.sh - Shared utility functions for tf-avm-action scripts
 # This library provides common logging and utility functions used across all installation scripts
+#
+# Features:
+#   - Colored logging functions (info, warn, error, debug)
+#   - Architecture detection (amd64/arm64)
+#   - Secure file downloading with retry logic
+#   - Checksum verification for security
+#   - Temporary directory management
+#
+# Usage:
+#   source "$(dirname "$0")/lib/common.sh"
 
 # Prevent multiple inclusions
 if [[ -n "${_COMMON_SH_LOADED:-}" ]]; then
@@ -9,6 +19,7 @@ fi
 readonly _COMMON_SH_LOADED=1
 
 # Exit on error, undefined variables, and pipe failures
+# This ensures scripts fail fast on errors rather than continuing with invalid state
 set -euo pipefail
 
 # Colors for output (only if terminal supports colors)
