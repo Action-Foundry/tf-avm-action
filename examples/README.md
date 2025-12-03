@@ -2,16 +2,32 @@
 
 This directory contains real-world examples of using tf-avm-action in various scenarios.
 
-## 🆕 Azure Verified Modules (AVM) - NEW!
+## 🆕 Azure Verified Modules (AVM) - ALL 102 MODULES SUPPORTED!
 
 Deploy Azure resources following CAF best practices with pre-validated modules:
 
-- [avm-single-environment.yml](avm-single-environment.yml) - 🆕 **NEW**: Deploy to a single environment (dev)
-- [avm-multi-environment.yml](avm-multi-environment.yml) - 🆕 **NEW**: Deploy to multiple environments sequentially
-- [avm-matrix-deployment.yml](avm-matrix-deployment.yml) - 🆕 **NEW**: Deploy to multiple environments in parallel
-- [terraform-configs/](terraform-configs/) - 🆕 **NEW**: Example tfvars files for dev and prod
+**🎉 All 102 AVM Modules Now Supported!**
 
-> **📚 Complete Guide**: See [AVM_MODULES.md](../AVM_MODULES.md) for comprehensive documentation.
+- [avm-single-environment.yml](avm-single-environment.yml) - Deploy to a single environment (dev)
+- [avm-multi-environment.yml](avm-multi-environment.yml) - Deploy to multiple environments sequentially
+- [avm-matrix-deployment.yml](avm-matrix-deployment.yml) - Deploy to multiple environments in parallel
+- [avm-extended-modules.yml](avm-extended-modules.yml) - 🆕 **NEW**: Deploy using extended modules (Key Vault, SQL, AKS, etc.)
+- [terraform-configs/dev/](terraform-configs/dev/) - Example tfvars files for basic modules
+- [terraform-configs/dev-extended/](terraform-configs/dev-extended/) - 🆕 **NEW**: Example tfvars for extended modules
+- [terraform-configs/prod/](terraform-configs/prod/) - Production environment examples
+
+**Supported Module Categories:**
+- 💾 **Storage & Data**: Storage Accounts, SQL Server, MySQL, PostgreSQL, Cosmos DB
+- 🌐 **Networking**: VNets, Load Balancers, Application Gateway, Firewall, DNS, VPN
+- 🔐 **Security & Identity**: Key Vault, Managed Identity, Role Assignments
+- 🖥️ **Compute**: Virtual Machines, VM Scale Sets, Container Instances, AKS
+- 📊 **Monitoring**: Application Insights, Log Analytics, Data Collection
+- 📦 **Containers**: Container Registry, Container Apps, AKS
+- 🔄 **Integration**: Event Hub, Service Bus, Logic Apps, Data Factory
+- 🖼️ **Web**: App Service, Function Apps, Static Web Apps
+- ...and 80+ more!
+
+> **📚 Complete Guide**: See [AVM_MODULES.md](../AVM_MODULES.md) for the full list of 102 supported modules and comprehensive documentation.
 
 ## 🚀 Simplified Terraform Workflows
 

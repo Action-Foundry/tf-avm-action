@@ -56,6 +56,17 @@ else
 fi
 
 echo ""
+
+# Run AVM modules registry tests
+echo "Running AVM modules registry tests..."
+if bash "${SCRIPT_DIR}/test-avm-modules-registry.sh"; then
+    echo "✓ AVM modules registry tests passed"
+else
+    echo "✗ AVM modules registry tests failed"
+    OVERALL_STATUS=1
+fi
+
+echo ""
 echo "========================================="
 echo "All Tests Complete"
 echo "========================================="
